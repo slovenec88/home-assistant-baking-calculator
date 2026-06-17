@@ -20,6 +20,10 @@ This is a single-file HTML baking calculator made for Home Assistant dashboards.
 - Small bake-plan tips for each mode
 - No server, no build step, no external dependencies
 
+## Live preview
+
+- https://slovenec88.github.io/home-assistant-baking-calculator
+
 ## Screens
 
 The page has three tabs:

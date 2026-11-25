@@ -190,6 +190,35 @@
       .recipe.open .recipe-body { display: grid; }
       #toast { bottom: 110px; }
     }
+
+    /* ===== Polish: warm bakery ===== */
+    :root, :root:root {
+      color-scheme: light;
+      --primary: #b5532a; --primary-container: #f6d9c4; --on-primary-container: #4a1d08;
+      --secondary-container: #efe0cf; --on-secondary-container: #3a2414;
+      --water: #6f9fc4; --flour: #d9a441; --starter: #b9835a; --yeast: #c46a6a; --salt: #9b948a;
+      --ink: #2e2118; --muted: #6b5a4b; --line: #e3d3c1; --paper: #f7efe4; --card: #fffaf2;
+      --field: #f1e5d5; --stat: #f6ead9; --warn: #b3261e; --focus-ring: rgba(181, 83, 42, 0.25);
+      --shadow: 0 2px 0 rgba(120, 80, 40, 0.07), 0 10px 28px rgba(120, 80, 40, 0.12);
+    }
+    body { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; background: var(--paper); }
+    .section-title, .recipe-head h2, .plan h2, dialog h3 { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.01em; }
+    .panel { border-radius: 30px; border-color: #ead9c5; }
+    .segmented { background: #ecdcc8; }
+    .segmented button, .chip, .actions button, .icon-btn, .field-label { font-weight: 700; }
+    .stepper button { color: #fff; background: #b5532a; }
+    .stepper input { background: #f4e8d8; font-family: Georgia, serif; font-size: 1.3rem; }
+    .chip[aria-pressed="true"], .segmented button[aria-selected="true"], .segmented button[aria-pressed="true"] { color: #fff; background: #b5532a; }
+    .ing .amt { font-family: Georgia, serif; font-size: 1.4rem; }
+    .ing .bar { height: 10px; background: #efe1cf; }
+    .result-main { color: #fff7ee; background: linear-gradient(135deg, #c8643a, #9c3d1b); box-shadow: 0 8px 20px rgba(156, 61, 27, 0.28); }
+    .total { font-family: Georgia, serif; font-size: 2rem; }
+    .actions button.primary { color: #fff; background: #b5532a; }
+    .step.bake { color: #fff7ee; background: linear-gradient(135deg, #c8643a, #9c3d1b); }
+    .step.bake .what span, .step.bake .when span { color: #ffe6d3; }
+    .step .timer-btn.running { color: #fff; background: #b5532a; }
+    .saved-item button, .dlg-actions button.primary { color: #fff; background: #b5532a; }
+    @media (max-width: 760px) { .recipe { background: #fffaf2; } }
   </style>
 </head>
 <body>

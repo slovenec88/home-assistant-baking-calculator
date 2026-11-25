@@ -34,7 +34,7 @@
   :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
   main { width: min(480px, 100%); margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; gap: 6px; padding: 10px 14px 52px; }
   #tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  #tabs button { height: 44px; border: 3px solid var(--line); border-radius: 999px; background: var(--bg); font-weight: 700; font-size: 0.9375rem; box-shadow: 3px 3px 0 var(--line); transition: transform 150ms ease-out, box-shadow 150ms ease-out; }
+  #tabs button { height: 40px; border: 3px solid var(--line); border-radius: 999px; background: var(--bg); font-weight: 700; font-size: 0.9375rem; box-shadow: 3px 3px 0 var(--line); transition: transform 150ms ease-out, box-shadow 150ms ease-out; }
   #tabs button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
   #bar { display: flex; height: 22px; border: 3px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--bg); }
   #bar span { font-size: 0; min-width: 4px; transition: flex-grow 150ms ease-out; border-right: 3px solid var(--line); }
@@ -51,7 +51,7 @@
   .in .pre { display: flex; gap: 6px; margin-top: 6px; }
   .in .pre button { height: 30px; padding: 0 12px; border: 2px solid var(--on-block); border-radius: 999px; background: transparent; color: var(--on-block); font-size: 0.8125rem; font-weight: 700; }
   .in .pre button[aria-pressed="true"] { background: var(--on-block); color: #fff6e0; }
-  .num { display: flex; align-items: baseline; gap: 6px; border: 0; background: none; padding: 0; min-height: 46px; font-weight: 700; font-size: 46px; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; cursor: ew-resize; user-select: none; -webkit-user-select: none; color: var(--on-block); }
+  .num { display: flex; align-items: baseline; gap: 6px; border: 0; background: none; padding: 0; min-height: 42px; font-weight: 700; font-size: 44px; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; cursor: ew-resize; user-select: none; -webkit-user-select: none; color: var(--on-block); }
   .num small { font-size: 1.125rem; letter-spacing: 0; opacity: 0.7; font-weight: 700; }
   .num input { width: 3.4ch; font: inherit; letter-spacing: inherit; background: var(--bg); color: var(--ink); border: 3px solid var(--line); border-radius: 10px; text-align: right; padding: 0 4px; }
   .ruler { grid-column: 1 / -1; height: 14px; margin: 4px -14px 0; position: relative; opacity: 0.6; color: var(--on-block); -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
@@ -63,10 +63,11 @@
   #out { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   #out .cell { padding: 5px 14px; border: 3px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--line); background: var(--salt); color: var(--on-block); }
   #out .cell[data-id="flour"] { background: var(--flour); } #out .cell[data-id="water"] { background: var(--water); } #out .cell[data-id="starter"] { background: var(--starter); } #out .cell[data-id="yeast"] { background: var(--yeast); }
-  #out .cell[data-id="hyd"] { background: var(--bg); color: var(--ink); }
+  #out .cell[data-id="hyd"] { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; padding: 0 8px; border: 0; box-shadow: none; background: none; color: var(--ink); }
+  #out .cell[data-id="hyd"] b { font-size: 18px; margin: 0; }
   #out .cell small { display: block; font-size: 0.8125rem; font-weight: 700; opacity: 0.75; } #out .cell b { display: block; margin-top: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
   #out .total { grid-column: 1 / -1; background: var(--accent); color: var(--on-accent); padding: 6px 16px; }
-  #out .total small { opacity: 0.85; } #out .total b { font-size: 42px; }
+  #out .total small { opacity: 0.85; } #out .total b { font-size: 38px; }
   #plan { margin: 0; padding: 0 4px; color: var(--mid); font-size: 0.8125rem; line-height: 1.35; font-weight: 600; }
   #drawer { border-top: 3px solid var(--line); border-radius: 20px 20px 0 0; } #dh .grip { height: 5px; background: var(--ink); opacity: 1; }
   #dname { border: 3px solid var(--line); border-radius: 14px; } #dgo { border: 3px solid var(--line); border-radius: 14px; box-shadow: 3px 3px 0 var(--line); }

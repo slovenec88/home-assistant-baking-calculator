@@ -190,6 +190,45 @@
       .recipe.open .recipe-body { display: grid; }
       #toast { bottom: 110px; }
     }
+
+    /* ===== Polish: minimal mono ===== */
+    :root, :root:root {
+      color-scheme: light;
+      --primary: #111; --primary-container: #111; --on-primary-container: #fff;
+      --secondary-container: #f2f2f2; --on-secondary-container: #111;
+      --water: #111; --flour: #111; --starter: #111; --yeast: #111; --salt: #111;
+      --ink: #111; --muted: #6e6e73; --line: #e7e7ea; --paper: #fff; --card: #fff;
+      --field: #f4f4f6; --stat: #f7f7f8; --warn: #c4231a; --focus-ring: rgba(0, 0, 0, 0.12); --shadow: none;
+    }
+    body { font-family: "Inter", "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+    .app { width: min(880px, 100%); }
+    .panel { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .form, .plan { padding: 8px 0; }
+    .recipe-body { padding: 8px 0; }
+    .section-title, .recipe-head h2, .plan h2 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    .segmented { padding: 0; gap: 0; border-radius: 0; background: transparent; border-bottom: 1px solid var(--line); }
+    .segmented button { border-radius: 0; color: var(--muted); font-weight: 600; }
+    .segmented button[aria-selected="true"], .segmented button[aria-pressed="true"] { color: #111; background: transparent; box-shadow: inset 0 -2px 0 #111; }
+    .segmented.small button { min-height: 34px; }
+    .stepper button { color: #111; background: transparent; border: 1px solid #111; }
+    .stepper input { background: transparent; border-bottom: 1px solid var(--line); border-radius: 0; font-size: 1.6rem; font-weight: 300; }
+    .chip { border-radius: 8px; border-color: var(--line); font-weight: 600; }
+    .chip[aria-pressed="true"] { color: #fff; background: #111; }
+    .ing .amt { font-size: 1.7rem; font-weight: 300; }
+    .ing .name { font-weight: 600; }
+    .ing .bar { height: 3px; border-radius: 0; }
+    .stat { border-radius: 8px; }
+    .result-main { padding: 18px 0; border-radius: 0; color: #111; background: transparent; border-top: 1px solid #111; border-bottom: 1px solid var(--line); }
+    .total { font-size: 2.8rem; font-weight: 200; letter-spacing: -0.02em; }
+    .actions button { border-radius: 8px; }
+    .actions button.primary { color: #fff; background: #111; }
+    .step { border-radius: 8px; }
+    .step.bake { color: #fff; background: #111; }
+    .step.bake .what span, .step.bake .when span { color: #c9c9ce; }
+    .step .timer-btn.running { color: #fff; background: #111; }
+    .saved-item button, .dlg-actions button.primary { color: #fff; background: #111; }
+    details.advanced { border-top: 1px solid var(--line); }
+    @media (max-width: 760px) { .recipe { background: #fff; border-top: 1px solid var(--line); border-radius: 20px 20px 0 0; } .recipe-body { padding: 8px 16px 16px; } }
   </style>
 </head>
 <body>

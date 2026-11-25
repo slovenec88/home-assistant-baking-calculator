@@ -84,55 +84,55 @@
     /* ---------- layout ---------- */
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(310px, 0.92fr); gap: 12px; align-items: start; }
     .panel { border: 1px solid var(--line); border-radius: 24px; background: var(--card); box-shadow: var(--shadow); }
-    .form { padding: 16px; display: grid; gap: 14px; }
+    .form { padding: 16px; display: grid; gap: 16px; }
     .section-title { margin: 0; font-size: 1.1rem; }
-    .fields { display: grid; gap: 14px; }
+    .fields { display: grid; gap: 16px; }
     .field { display: grid; gap: 6px; }
     .field-label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--muted); font-size: 0.875rem; font-weight: 700; }
     .field-label small { font-weight: 600; opacity: 0.85; }
 
     /* ---------- stepper (one pattern everywhere) ---------- */
     .stepper { display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; gap: 6px; }
-    .stepper button { min-height: 48px; border: 0; border-radius: 999px; color: var(--on-primary-container); background: var(--primary-container); font-size: 1.4rem; font-weight: 800; line-height: 1; }
+    .stepper button { min-height: 48px; border: 0; border-radius: 999px; color: var(--on-primary-container); background: var(--primary-container); font-size: 1.4rem; font-weight: 600; line-height: 1; }
     .stepper button:active { filter: brightness(0.93); transform: scale(0.97); }
     .stepper .input-wrap { position: relative; display: grid; }
-    .stepper input { width: 100%; min-width: 0; min-height: 48px; padding: 0 44px 0 14px; border: 0; border-radius: 16px; color: var(--ink); background: var(--field); font-size: 1.15rem; font-weight: 800; text-align: center; outline: none; }
+    .stepper input { width: 100%; min-width: 0; min-height: 48px; padding: 0 44px 0 14px; border: 0; border-radius: 16px; color: var(--ink); background: var(--field); font-size: 1.15rem; font-weight: 600; text-align: center; outline: none; }
     .stepper input:focus { box-shadow: inset 0 -2px 0 var(--primary), 0 0 0 3px var(--focus-ring); }
     .stepper input[aria-invalid="true"] { box-shadow: inset 0 -2px 0 var(--warn); }
-    .stepper .unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.875rem; font-weight: 800; pointer-events: none; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .stepper .unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.875rem; font-weight: 600; pointer-events: none; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
     .chip { min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-size: 0.875rem; font-weight: 750; }
     .chip[aria-pressed="true"] { border-color: transparent; color: var(--on-primary-container); background: var(--primary-container); }
     .hint { margin: 0; color: var(--muted); font-size: 0.875rem; line-height: 1.3; }
 
-    details.advanced { border-top: 1px solid var(--line); padding-top: 10px; }
-    details.advanced summary { min-height: 40px; display: flex; align-items: center; cursor: pointer; color: var(--muted); font-size: 0.9rem; font-weight: 800; border-radius: 12px; }
-    details.advanced .fields { margin-top: 10px; }
+    details.advanced { border-top: 1px solid var(--line); padding-top: 12px; }
+    details.advanced summary { min-height: 40px; display: flex; align-items: center; cursor: pointer; color: var(--muted); font-size: 0.9rem; font-weight: 600; border-radius: 12px; }
+    details.advanced .fields { margin-top: 12px; }
     .text-btn { justify-self: start; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; font-size: 0.875rem; font-weight: 750; }
 
     /* ---------- recipe card ---------- */
     .recipe { position: sticky; top: 12px; overflow: hidden; }
     .recipe-handle { display: none; }
-    .recipe-body { padding: 16px; display: grid; gap: 14px; }
+    .recipe-body { padding: 16px; display: grid; gap: 16px; }
     .recipe-head h2 { margin: 0; font-size: 1.1rem; }
-    .recipe-head p { margin: 2px 0 0; color: var(--muted); font-size: 0.9rem; }
-    .ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-    .ing { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; column-gap: 8px; row-gap: 5px; align-items: center; }
+    .recipe-head p { margin: 4px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+    .ing { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 8px; row-gap: 4px; align-items: center; }
     .ing[hidden] { display: none; }
-    .ing .ico { font-size: 1.2rem; text-align: center; }
+    .ing-head { justify-self: end; color: var(--muted); font-size: 0.875rem; font-weight: 600; }
     .ing .name { font-size: 0.95rem; font-weight: 700; }
-    .ing .amt { font-size: 1.25rem; font-weight: 850; font-variant-numeric: tabular-nums; text-align: right; }
-    .ing .bp { min-width: 52px; text-align: right; color: var(--muted); font-size: 0.875rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .ing .bar { grid-column: 2 / -1; height: 8px; border-radius: 999px; background: var(--field); overflow: hidden; }
-    .ing .bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--c); transition: width 0.3s ease; }
+    .ing .amt { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+    .ing .bp { min-width: 48px; text-align: right; color: var(--muted); font-size: 0.875rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ing .bar { grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--field); overflow: hidden; }
+    .ing .bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--c); transition: width 150ms ease-out; }
     .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .stat { padding: 10px 12px; border-radius: 16px; background: var(--stat); }
+    .stat { padding: 12px; border-radius: 16px; background: var(--stat); }
     .stat .label { color: var(--muted); font-size: 0.8rem; font-weight: 750; }
-    .stat .value { margin-top: 3px; font-size: 1.15rem; font-weight: 850; font-variant-numeric: tabular-nums; }
-    .result-main { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; color: var(--on-primary-container); background: var(--primary-container); }
-    .result-main .label { font-size: 0.9rem; font-weight: 800; }
-    .total { font-size: 1.6rem; font-weight: 900; font-variant-numeric: tabular-nums; }
-    .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .stat .value { margin-top: 4px; font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .result-main { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border-radius: 16px; color: var(--on-primary-container); background: var(--primary-container); }
+    .result-main .label { font-size: 0.9rem; font-weight: 600; }
+    .total { font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .actions button { min-height: 44px; padding: 0 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); font-size: 0.875rem; font-weight: 750; }
     .actions button.primary { color: var(--on-primary-container); background: var(--primary-container); border-color: transparent; }
     .note { margin: 0; color: var(--muted); font-size: 0.8rem; line-height: 1.3; }
@@ -144,7 +144,7 @@
     .plan-controls label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.875rem; font-weight: 700; }
     .plan-controls input[type="datetime-local"] { min-height: 44px; padding: 0 12px; border: 0; border-radius: 14px; color: var(--ink); background: var(--field); font-size: 1rem; font-weight: 700; }
     .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    .step { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 16px; background: var(--stat); }
+    .step { display: grid; grid-template-columns: 80px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px; border-radius: 16px; background: var(--stat); }
     .step.bake { color: var(--on-primary-container); background: var(--primary-container); }
     .step.past .when { color: var(--warn); }
     .step .when { font-variant-numeric: tabular-nums; }
@@ -152,43 +152,43 @@
     .step .when span { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
     .step .what b { display: block; font-size: 0.95rem; }
     .step .what span { color: var(--muted); font-size: 0.85rem; }
-    .step .timer-btn { min-height: 40px; min-width: 92px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-size: 0.875rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .step .timer-btn { min-height: 40px; min-width: 96px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-size: 0.875rem; font-weight: 750; font-variant-numeric: tabular-nums; }
     .step .timer-btn.running { color: var(--on-primary-container); background: var(--primary-container); border-color: transparent; }
     .warn { color: var(--warn); font-size: 0.9rem; font-weight: 700; margin: 0; }
 
     /* ---------- dialogs / toast ---------- */
-    dialog { width: min(420px, calc(100% - 32px)); padding: 20px; border: 0; border-radius: 28px; color: var(--ink); background: var(--card); box-shadow: 0 8px 40px rgba(0,0,0,0.3); }
+    dialog { width: min(420px, calc(100% - 32px)); padding: 24px; border-radius: 28px; color: var(--ink); background: var(--card); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
     dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
     dialog h3 { margin: 0 0 12px; }
     dialog input[type="text"] { width: 100%; min-height: 48px; padding: 0 14px; border: 0; border-radius: 14px; color: var(--ink); background: var(--field); font-size: 1rem; }
-    .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
     .dlg-actions button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--field); font-weight: 750; }
     .dlg-actions button.primary { color: var(--on-primary-container); background: var(--primary-container); }
     .saved-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 50vh; overflow: auto; }
-    .saved-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; padding: 10px 12px; border-radius: 16px; background: var(--stat); }
+    .saved-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 12px; border-radius: 16px; background: var(--stat); }
     .saved-item b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .saved-item span { color: var(--muted); font-size: 0.85rem; }
     .saved-item button { min-height: 38px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--primary-container); color: var(--on-primary-container); font-weight: 750; font-size: 0.875rem; }
     .saved-item button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
-    #toast { position: fixed; left: 50%; bottom: 96px; z-index: 50; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 999px; color: var(--paper); background: var(--ink); font-size: 0.9rem; font-weight: 700; opacity: 0; transform: translate(-50%, 12px); pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
+    #toast { position: fixed; left: 50%; bottom: 96px; z-index: 50; max-width: calc(100% - 32px); padding: 12px 16px; border-radius: 999px; color: var(--paper); background: var(--ink); font-size: 0.9rem; font-weight: 700; opacity: 0; transform: translate(-50%, 12px); pointer-events: none; transition: opacity 150ms ease-out, transform 150ms ease-out; }
     #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
     /* ---------- mobile: result becomes a bottom sheet ---------- */
     @media (max-width: 760px) {
-      body { padding-bottom: 92px; }
+      body { padding-bottom: 96px; }
       .app { padding: 8px; }
       .topbar { grid-template-columns: 1fr; }
       .top-actions { justify-content: flex-end; }
       .layout { grid-template-columns: 1fr; }
-      .recipe { position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; flex-direction: column; max-height: 86vh; border-radius: 28px 28px 0 0; border-bottom: 0; box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.22); padding-bottom: env(safe-area-inset-bottom); }
+      .recipe { position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; flex-direction: column; max-height: 86vh; border-radius: 28px 28px 0 0; border-bottom: 0; box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05); padding-bottom: env(safe-area-inset-bottom); }
       .recipe-handle { display: grid; gap: 6px; justify-items: center; width: 100%; padding: 8px 16px 12px; border: 0; background: transparent; }
       .recipe-handle .grip { width: 40px; height: 4px; border-radius: 999px; background: var(--line); }
-      .recipe-handle .summary { font-size: 0.95rem; font-weight: 800; font-variant-numeric: tabular-nums; text-align: center; }
+      .recipe-handle .summary { font-size: 0.95rem; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; }
       .recipe-body { display: none; overflow: auto; padding-top: 4px; }
       .recipe.open .recipe-body { display: grid; }
-      #toast { bottom: 110px; }
+      #toast { bottom: 112px; }
     }
   </style>
 </head>
@@ -199,13 +199,12 @@
         <nav class="segmented" id="tabs" aria-label="Dough type"></nav>
         <div class="top-actions">
           <button type="button" class="icon-btn" id="unitsBtn" aria-label="Switch units">g</button>
-          <button type="button" class="icon-btn" id="recipesBtn">📖 Recipes</button>
+          <button type="button" class="icon-btn" id="recipesBtn">Recipes</button>
         </div>
       </header>
 
       <section class="layout">
         <form class="panel form" id="controls" autocomplete="off" onsubmit="return false">
-          <h2 class="section-title" id="modeTitle"></h2>
           <div class="field">
             <div class="field-label">Scale by</div>
             <div class="segmented small" id="scaleSeg" role="group" aria-label="Scale recipe by"></div>
@@ -227,8 +226,7 @@
               <h2 id="recipeTitle"></h2>
               <p id="recipeSub"></p>
             </div>
-            <ul class="ings" id="ings"></ul>
-            <p class="note">Percentages are baker's percentages of total flour (including flour in the starter).</p>
+            <ul class="ings" id="ings"><li class="ing-head" aria-hidden="true">% of flour</li></ul>
             <div class="stats">
               <div class="stat"><div class="label">Total flour</div><div class="value" id="totalFlour"></div></div>
               <div class="stat"><div class="label">Final hydration</div><div class="value" id="finalHydration"></div></div>
@@ -255,7 +253,6 @@
         </div>
         <p class="warn" id="planWarn" hidden></p>
         <ol class="steps" id="steps"></ol>
-        <p class="note">Timers keep running if you reload this page. Allow notifications when asked to get an alert when a step is done.</p>
       </section>
     </div>
   </main>
@@ -458,7 +455,7 @@
       el._v = to;
       cancelAnimationFrame(el._raf);
       if (reduceMotion || from === to) { el.textContent = fmt(to); return; }
-      const t0 = performance.now(), dur = 220;
+      const t0 = performance.now(), dur = 150;
       const tick = now => {
         const p = Math.min(1, (now - t0) / dur);
         el.textContent = fmt(from + (to - from) * (1 - (1 - p) ** 3));
@@ -529,9 +526,8 @@
       show();
       refreshers.push(show);
 
-      const range = `${fmtNum(sp.min / conv, dec)}–${fmtNum(sp.max / conv, dec)} ${unit}`.trim();
       const wrap = h("div", { class: "field" },
-        h("label", { class: "field-label", for: "f-" + key }, h("span", { text: label }), h("small", { text: opts.hint || range })),
+        h("label", { class: "field-label", for: "f-" + key }, h("span", { text: label }), h("small", { text: opts.hint || "" })),
         h("div", { class: "stepper" }, minus, h("div", { class: "input-wrap" }, input, h("span", { class: "unit", text: unit })), plus));
 
       if (opts.presets) {
@@ -554,7 +550,6 @@
     function renderControls() {
       refreshers = [];
       const m = state.mode, s = state.byMode[m], M = MODES[m];
-      $("#modeTitle").textContent = M.title;
       $("#unitsBtn").textContent = state.units;
 
       $("#tabs").replaceChildren(...Object.entries(MODES).map(([k, v]) =>
@@ -593,16 +588,16 @@
 
     /* ---------------- recipe card ---------------- */
     const ING = [
-      { id: "flour", icon: "🌾", name: "Flour", c: "--flour" },
-      { id: "water", icon: "💧", name: "Water", c: "--water" },
-      { id: "starter", icon: "🫙", name: "Sourdough starter", c: "--starter" },
-      { id: "yeast", icon: "🧫", name: "Instant dry yeast", c: "--yeast" },
-      { id: "salt", icon: "🧂", name: "Salt", c: "--salt" }
+      { id: "flour", name: "Flour", c: "--flour" },
+      { id: "water", name: "Water", c: "--water" },
+      { id: "starter", name: "Sourdough starter", c: "--starter" },
+      { id: "yeast", name: "Instant dry yeast", c: "--yeast" },
+      { id: "salt", name: "Salt", c: "--salt" }
     ];
     const rows = {};
     for (const i of ING) {
       const li = h("li", { class: "ing", style: `--c: var(${i.c})` },
-        h("span", { class: "ico", text: i.icon }), h("span", { class: "name", text: i.name }),
+        h("span", { class: "name", text: i.name }),
         h("output", { class: "amt" }), h("span", { class: "bp" }),
         h("span", { class: "bar" }, h("i")));
       rows[i.id] = { li, amt: $(".amt", li), bp: $(".bp", li), bar: $("i", li) };
@@ -633,22 +628,22 @@
       let title = M.title;
       if (m === "pizza") title += s.leaven === "sourdough" ? " · sourdough" : " · instant yeast";
       $("#recipeTitle").textContent = title;
-      $("#recipeSub").textContent = `${pieceTxt} · ${fmtW(r.total)} dough`;
+      $("#recipeSub").textContent = pieceTxt;
       $("#summary").textContent = `${fmtW(r.flour)} flour · ${fmtW(r.water)} water · ${fmtW(r.hasStarter ? r.starter : r.yeast)} ${r.hasStarter ? "starter" : "yeast"} · ${fmtW(r.salt)} salt`;
     }
 
     function recipeText() {
       const m = state.mode, s = state.byMode[m], r = lastResult || compute(m, s);
-      const lines = [`${$("#recipeTitle").textContent} — ${$("#recipeSub").textContent}`, ""];
+      const lines = [`${$("#recipeTitle").textContent} (${$("#recipeSub").textContent})`, ""];
       for (const i of ING) {
         if (i.id === "starter" && !r.hasStarter) continue;
         if (i.id === "yeast" && !r.hasYeast) continue;
-        lines.push(`${i.icon} ${i.name}: ${fmtW(r[i.id])} (${fmtPct(r[i.id] / r.totalFlour * 100)})`);
+        lines.push(`${i.name} ${fmtW(r[i.id])} (${fmtPct(r[i.id] / r.totalFlour * 100)})`);
       }
       lines.push(`Total dough: ${fmtW(r.total)} · Hydration ${fmtPct(r.finalHydration)}`, "", "Plan:");
       for (const st of planTimes()) {
         const w = fmtWhen(st.start);
-        lines.push(`${w.day} ${w.time} — ${st.label} (${fmtDur(st.min)})`);
+        lines.push(`${w.day} ${w.time}  ${st.label} (${fmtDur(st.min)})`);
       }
       return lines.join("\n");
     }
@@ -740,7 +735,7 @@
       for (const [id, t] of Object.entries(timers)) {
         if (t.end <= now) {
           delete timers[id]; fired = true;
-          toast(`⏰ ${t.label} is done`);
+          toast(`${t.label} is done`);
           beep();
           try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch {}
           try { if ("Notification" in window && Notification.permission === "granted") new Notification("Dough timer", { body: `${t.label} is done` }); } catch {}
@@ -750,11 +745,12 @@
       document.querySelectorAll("[data-timer]").forEach(btn => {
         const t = timers[btn.dataset.timer];
         btn.classList.toggle("running", !!t);
+        btn.setAttribute("aria-label", t ? "Stop timer" : "Start timer");
         if (t) {
           const left = Math.max(0, Math.round((t.end - now) / 1000));
           const hh = Math.floor(left / 3600), mm = Math.floor(left % 3600 / 60), ss = left % 60;
-          btn.textContent = (hh ? hh + ":" + String(mm).padStart(2, "0") : mm) + ":" + String(ss).padStart(2, "0") + " ✕";
-        } else btn.textContent = "⏱ Timer";
+          btn.textContent = (hh ? hh + ":" + String(mm).padStart(2, "0") : mm) + ":" + String(ss).padStart(2, "0");
+        } else btn.textContent = "Timer";
       });
     }
     setInterval(tickTimers, 1000);
@@ -763,7 +759,7 @@
     function renderSaved() {
       const list = $("#savedList");
       if (!state.saved.length) {
-        list.replaceChildren(h("li", { class: "hint", text: "Nothing saved yet. Tune a recipe and tap Save." }));
+        list.replaceChildren(h("li", { class: "hint", text: "No saved recipes." }));
         return;
       }
       list.replaceChildren(...state.saved.map(item => {
@@ -774,7 +770,7 @@
             state.mode = item.mode; state.byMode[item.mode] = s; planAnchor = "now";
             $("#recipesDlg").close(); structural(); toast(`Loaded ${item.name}`);
           } }),
-          h("button", { type: "button", class: "ghost", "aria-label": "Delete " + item.name, text: "✕", onclick: () => {
+          h("button", { type: "button", class: "ghost", "aria-label": "Delete " + item.name, text: "Delete", onclick: () => {
             state.saved = state.saved.filter(x => x !== item); saveState(); renderSaved();
           } }));
       }));

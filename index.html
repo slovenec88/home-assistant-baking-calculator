@@ -22,6 +22,8 @@
   #dlist span { display: block; color: var(--mid, var(--muted, inherit)); font-size: 0.8125rem; }
   #dlist button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; border-radius: inherit; }
   #dlist button.load { background: var(--accent); color: var(--on-accent, #000); border-color: transparent; font-weight: 700; }
+  #dnote { margin: 0; padding: 8px 10px; border: 1px solid var(--line); font-size: 0.8125rem; line-height: 1.35; color: var(--mid, var(--muted, inherit)); border-radius: inherit; }
+  #dnote[hidden] { display: none; }
   #dlist .empty { display: block; border: 0; color: var(--mid, var(--muted, inherit)); padding: 4px 0; }
 
   :root { color-scheme: light dark; --bg: #e6e3db; --panel: #f3f1eb; --ink: #1d1d1b; --mid: #86827a; --line: #cdc9be; --accent: #e4531c; --on-accent: #ffffff; }
@@ -79,6 +81,7 @@
   <button id="dh" type="button" aria-expanded="false" aria-controls="dbody"><span class="grip" aria-hidden="true"></span><span id="dl">Recipes</span></button>
   <div id="dbody" hidden>
     <form id="dsave"><input id="dname" type="text" maxlength="40" aria-label="Recipe name" placeholder="Name this recipe" autocomplete="off"><button id="dgo" type="submit">Save</button></form>
+    <p id="dnote" hidden>Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.</p>
     <ul id="dlist"></ul>
   </div>
 </aside>
@@ -420,12 +423,16 @@ Dough.ui = (() => {
 /* ---- Recipe store (separate from the live values; survives reloads) ---- */
 Dough.recipes = (() => {
   const KEY = "dough-ratio-assistant:recipes:v1";
-  const read = () => { try { const a = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(a) ? a : []; } catch { return []; } };
-  const write = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch {} };
+  // Some views block browser storage (previews, sandboxed frames, private modes). Detect that, and keep recipes in memory for the session instead of failing silently.
+  let persistent = (() => { try { localStorage.setItem("__dough_probe", "1"); localStorage.removeItem("__dough_probe"); return true; } catch { return false; } })();
+  let mem = [];
+  const read = () => { if (!persistent) return mem.slice(); try { const a = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(a) ? a : []; } catch { return mem.slice(); } };
+  const write = a => { mem = a.slice(); if (!persistent) return; try { localStorage.setItem(KEY, JSON.stringify(a)); } catch { persistent = false; } };
   const listeners = new Set();
   const notify = () => listeners.forEach(fn => fn(read()));
   return {
     list: read,
+    persistent: () => persistent,
     subscribe(fn) { listeners.add(fn); fn(read()); },
     save(name) { const a = read(); const r = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: (name || "").trim().slice(0, 40) || "Recipe", at: Date.now(), snap: Dough.snapshot() }; a.unshift(r); write(a); notify(); return r; },
     remove(id) { write(read().filter(r => r.id !== id)); notify(); },
@@ -532,10 +539,11 @@ Dough.recipes = (() => {
     e.preventDefault(); const m = Dough.model();
     const name = $("#dname").value.trim() || (m.title + ", " + Dough.fmtVal(m.fields[0]));
     Dough.recipes.save(name); $("#dname").value = ""; vib(10);
-    $("#dl").textContent = "Saved"; clearTimeout(flash); flash = setTimeout(() => draw(Dough.recipes.list()), 1500);
+    $("#dl").textContent = Dough.recipes.persistent() ? "Saved" : "Saved for this session"; clearTimeout(flash); flash = setTimeout(() => draw(Dough.recipes.list()), 1500);
   });
   function draw(list) {
     $("#dl").textContent = list.length ? `Recipes (${list.length})` : "Recipes";
+    $("#dnote").hidden = Dough.recipes.persistent();
     const ul = $("#dlist"); ul.replaceChildren();
     if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No saved recipes."; ul.append(li); return; }
     list.forEach(r => {

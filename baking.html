@@ -190,6 +190,131 @@
       .recipe.open .recipe-body { display: grid; }
       #toast { bottom: 112px; }
     }
+
+    /* ===== Material You (Material 3 tonal surfaces, amber seed) ===== */
+    :root:root {
+      color-scheme: light dark;
+      --primary: #8b5000; --on-primary: #ffffff;
+      --primary-container: #ffdcbd; --on-primary-container: #2c1600;
+      --secondary-container: #f9ddc1; --on-secondary-container: #2a1708;
+      --tertiary-container: #e1e6b0; --on-tertiary-container: #1a1e00;
+      --surface: #fff8f5; --s-low: #fcf2ea; --s-mid: #f6ece3; --s-high: #f0e6dd; --s-highest: #eae0d7;
+      --on-surface: #211a14; --on-variant: #51443a; --outline: #84746a; --outline-variant: #d6c3b6;
+      --inverse: #372f28; --on-inverse: #fbeee5; --error: #ba1a1a;
+      --water: #2e6a8e; --flour: #8b5000; --starter: #5c6137; --yeast: #9c4146; --salt: #84746a;
+      --paper: var(--surface); --card: var(--s-mid); --field: var(--s-highest); --stat: var(--s-highest);
+      --ink: var(--on-surface); --muted: var(--on-variant); --line: var(--outline-variant);
+      --warn: var(--error); --focus-ring: transparent; --shadow: none;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:root {
+        --primary: #ffb778; --on-primary: #4a2800;
+        --primary-container: #693c00; --on-primary-container: #ffdcbd;
+        --secondary-container: #594330; --on-secondary-container: #f9ddc1;
+        --tertiary-container: #444a22; --on-tertiary-container: #e1e6b0;
+        --surface: #18120c; --s-low: #211a14; --s-mid: #251e18; --s-high: #302822; --s-highest: #3b332c;
+        --on-surface: #eee0d5; --on-variant: #d6c3b6; --outline: #9e8e82; --outline-variant: #51443a;
+        --inverse: #eee0d5; --on-inverse: #372f28; --error: #ffb4ab;
+        --water: #98ccf4; --flour: #ffb778; --starter: #c5ca96; --yeast: #ffb2b6; --salt: #9e8e82;
+      }
+    }
+    body { font-family: "Google Sans", Roboto, "Segoe UI", system-ui, sans-serif; }
+    .app { width: min(960px, 100%); padding: 16px; }
+    .shell { gap: 16px; }
+
+    /* state layer: hover 8%, press 12% */
+    .chip, .stepper button, .actions button, .icon-btn, .segmented button, .timer-btn, .saved-item button, .dlg-actions button, .text-btn { position: relative; overflow: hidden; border-radius: inherit; }
+    .chip::after, .stepper button::after, .actions button::after, .icon-btn::after, .segmented button::after, .timer-btn::after, .saved-item button::after, .dlg-actions button::after, .text-btn::after {
+      content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity 150ms ease-out; pointer-events: none; }
+    @media (hover: hover) { .chip:hover::after, .stepper button:hover::after, .actions button:hover::after, .icon-btn:hover::after, .segmented button:hover::after, .timer-btn:hover::after, .saved-item button:hover::after, .dlg-actions button:hover::after, .text-btn:hover::after { opacity: 0.08; } }
+    .chip:active::after, .stepper button:active::after, .actions button:active::after, .icon-btn:active::after, .segmented button:active::after, .timer-btn:active::after, .saved-item button:active::after, .dlg-actions button:active::after, .text-btn:active::after { opacity: 0.12; }
+    .stepper button:active { filter: none; transform: none; }
+    button:focus-visible, input:focus-visible, summary:focus-visible { box-shadow: none; outline: 3px solid var(--primary); outline-offset: 2px; }
+
+    /* surfaces are tonal, not outlined */
+    .panel { border: 0; border-radius: 28px; box-shadow: none; }
+    .form { background: var(--s-mid); padding: 24px; gap: 24px; }
+    .recipe { background: var(--s-high); }
+    .recipe-body { padding: 24px; gap: 24px; }
+    .plan { background: var(--s-low); padding: 24px; gap: 16px; }
+    .fields { gap: 24px; }
+
+    /* top bar: outlined segmented button + outlined buttons */
+    .topbar { gap: 12px; }
+    .segmented { padding: 0; gap: 0; border: 1px solid var(--outline); border-radius: 999px; background: transparent; overflow: hidden; }
+    .segmented button { min-height: 40px; border-radius: 0; color: var(--on-surface); font-size: 0.875rem; font-weight: 500; letter-spacing: 0.01em; }
+    .segmented button + button { border-left: 1px solid var(--outline); }
+    .segmented button[aria-selected="true"], .segmented button[aria-pressed="true"] { color: var(--on-secondary-container); background: var(--secondary-container); }
+    .segmented.small button { min-height: 36px; }
+    .icon-btn { min-height: 40px; padding: 0 20px; border: 1px solid var(--outline); border-radius: 999px; background: transparent; color: var(--primary); font-weight: 500; }
+
+    .field-label { color: var(--on-variant); font-size: 0.875rem; font-weight: 500; letter-spacing: 0.01em; }
+    .field-label small { font-weight: 400; }
+
+    /* stepper: tonal icon buttons around an outlined field */
+    .stepper { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 12px; align-items: center; }
+    .stepper button { min-height: 40px; border-radius: 999px; color: var(--on-secondary-container); background: var(--secondary-container); font-size: 1.375rem; font-weight: 500; }
+    .stepper input { min-height: 56px; border: 1px solid var(--outline); border-radius: 16px; background: transparent; font-size: 1.375rem; font-weight: 400; padding: 0 48px; }
+    .stepper input:focus { box-shadow: none; border-color: var(--primary); outline: 2px solid var(--primary); outline-offset: -2px; }
+    .stepper input[aria-invalid="true"] { border-color: var(--error); outline: 2px solid var(--error); outline-offset: -2px; box-shadow: none; }
+    .stepper .unit { font-weight: 500; color: var(--on-variant); }
+
+    .chips { gap: 8px; }
+    .chip { min-height: 32px; padding: 0 16px; border: 1px solid var(--outline); border-radius: 8px; background: transparent; color: var(--on-variant); font-size: 0.875rem; font-weight: 500; }
+    .chip[aria-pressed="true"] { border-color: transparent; color: var(--on-secondary-container); background: var(--secondary-container); }
+
+    details.advanced { border-top: 1px solid var(--outline-variant); padding-top: 16px; }
+    details.advanced summary { color: var(--primary); font-weight: 500; }
+    .text-btn { min-height: 40px; padding: 0 20px; border: 1px solid var(--outline); border-radius: 999px; color: var(--primary); font-weight: 500; }
+
+    /* recipe card */
+    .recipe-head h2 { font-size: 1.5rem; font-weight: 400; }
+    .recipe-head p { color: var(--on-variant); }
+    .ings { gap: 16px; }
+    .ing .name { font-size: 1rem; font-weight: 400; }
+    .ing .amt { font-size: 1.5rem; font-weight: 400; }
+    .ing .bp { color: var(--on-variant); }
+    .ing .bar { height: 8px; background: var(--s-highest); }
+    .ing-head { color: var(--on-variant); }
+    .stat { padding: 16px; border-radius: 20px; background: var(--s-highest); }
+    .stat .label { color: var(--on-variant); font-weight: 500; }
+    .stat .value { font-size: 1.375rem; font-weight: 400; }
+    .result-main { padding: 20px 24px; border-radius: 28px; color: var(--on-primary-container); background: var(--primary-container); }
+    .result-main .label { font-size: 1rem; font-weight: 500; }
+    .total { font-size: 2.75rem; font-weight: 400; letter-spacing: -0.01em; }
+    .actions { gap: 8px; }
+    .actions button { min-height: 48px; border: 0; border-radius: 999px; color: var(--on-secondary-container); background: var(--secondary-container); font-weight: 500; }
+    .actions button.primary { color: var(--on-primary); background: var(--primary); }
+    .actions button#resetBtn { color: var(--primary); background: transparent; }
+
+    /* plan */
+    .plan h2 { font-size: 1.375rem; font-weight: 400; }
+    .plan-controls input[type="datetime-local"] { min-height: 48px; border-radius: 12px 12px 0 0; border-bottom: 1px solid var(--outline); background: var(--s-highest); font-weight: 400; }
+    .step { padding: 16px; border-radius: 20px; background: var(--s-mid); }
+    .step.bake { color: var(--on-tertiary-container); background: var(--tertiary-container); }
+    .step.bake .what span, .step.bake .when span { color: var(--on-tertiary-container); opacity: 0.8; }
+    .step .when b { font-weight: 500; }
+    .step .what b { font-weight: 500; }
+    .step .timer-btn { border: 1px solid var(--outline); border-radius: 999px; background: transparent; color: var(--primary); font-weight: 500; }
+    .step .timer-btn.running { border-color: transparent; color: var(--on-secondary-container); background: var(--secondary-container); }
+    .step.past .when { color: var(--error); }
+
+    dialog { border: 0; border-radius: 28px; background: var(--s-high); box-shadow: none; }
+    dialog input[type="text"] { min-height: 56px; border: 1px solid var(--outline); border-radius: 16px; background: transparent; }
+    .dlg-actions button { background: transparent; color: var(--primary); font-weight: 500; }
+    .dlg-actions button.primary { background: transparent; color: var(--primary); }
+    .saved-item { border-radius: 16px; background: var(--s-highest); }
+    .saved-item button { color: var(--on-secondary-container); background: var(--secondary-container); font-weight: 500; }
+    #toast { border-radius: 12px; color: var(--on-inverse); background: var(--inverse); font-weight: 400; }
+
+    @media (max-width: 760px) {
+      .app { padding: 12px; }
+      .recipe { background: var(--s-low); border-radius: 28px 28px 0 0; box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05); }
+      .recipe-handle .grip { width: 32px; height: 4px; background: var(--outline); opacity: 0.6; }
+      .recipe-handle .summary { color: var(--on-surface); font-weight: 500; }
+      .form, .plan { padding: 16px; }
+      .recipe-body { padding: 8px 16px 16px; }
+    }
   </style>
 </head>
 <body>

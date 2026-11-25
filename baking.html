@@ -299,6 +299,7 @@
     .saved-item button { color: var(--primary); background: var(--tint); font-weight: 600; }
     #toast { border: 1px solid var(--glass-edge); color: var(--ink); background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); font-weight: 500; }
 
+    @media (min-width: 761px) { .topbar { box-shadow: 0 0 0 100vmax var(--glass); clip-path: inset(0 -100vmax); border-bottom: 0; } }
     @media (max-width: 760px) {
       .app { padding: 0 12px 12px; }
       .topbar { margin: 0 -12px; padding: 8px 12px; }

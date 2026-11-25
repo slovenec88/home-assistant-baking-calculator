@@ -315,6 +315,63 @@
       .form, .plan { padding: 16px; }
       .recipe-body { padding: 8px 16px 16px; }
     }
+
+    /* ===== One screen: inputs and results visible together on a phone ===== */
+    .phone-only { display: none; }
+    @media (max-width: 760px) {
+      body { padding-bottom: 0; }
+      .app { padding: 8px; }
+      .shell, .layout { gap: 8px; }
+      .top-actions { display: none; }
+      .phone-only { display: inline-flex; align-items: center; justify-content: center; }
+      #resetBtn { display: none; }
+      .actions { grid-template-columns: repeat(4, 1fr); }
+      .actions button { min-height: 40px; }
+
+      /* results are part of the page, not a sheet */
+      .recipe { position: static; display: block; max-height: none; border-radius: 24px; box-shadow: none; background: var(--s-high); padding: 0; }
+      .recipe-handle { display: none; }
+      .recipe-body { display: grid; padding: 12px; gap: 8px; }
+      .ing .bp { min-width: 44px; font-size: 0.8125rem; }
+      .recipe-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+      .recipe-head h2 { font-size: 1.125rem; }
+      .recipe-head p { margin: 0; }
+      .ings { gap: 6px; }
+      .ing { row-gap: 2px; }
+      .ing .name { font-size: 0.9375rem; }
+      .ing .amt { font-size: 1.25rem; }
+      .ing .bar { height: 6px; }
+      .ing-head { display: none; }
+      .ing .bp::after { content: ""; }
+      .stats { display: none; }
+      .result-main { padding: 8px 16px; border-radius: 20px; }
+      .total { font-size: 1.875rem; }
+
+      /* inputs: one line per value */
+      .panel { border-radius: 24px; }
+      .form { padding: 12px; gap: 4px; }
+      .fields { gap: 4px; }
+      .field { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; row-gap: 0; min-height: 40px; }
+      .field > .presets { display: none; }
+      .field > .chips { grid-column: 2; justify-content: flex-end; }
+      .field:has(> .segmented) { grid-template-columns: auto minmax(0, 1fr); }
+      .field > .segmented { justify-self: end; grid-column: 2; }
+      .field-label { display: flex; align-items: baseline; justify-content: flex-start; gap: 8px; font-size: 0.9375rem; }
+      .field-label small { font-size: 0.75rem; }
+      .stepper { grid-template-columns: 36px 96px 36px; gap: 4px; }
+      .stepper button { min-height: 36px; font-size: 1.25rem; }
+      .stepper input { min-height: 38px; padding: 0 28px 0 8px; border-radius: 12px; font-size: 1.125rem; }
+      .stepper .unit { right: 8px; font-size: 0.8125rem; }
+      #fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
+      #fields > .field { grid-column: 1 / -1; }
+      #fields > .field.choice { grid-column: span 1; grid-template-columns: 1fr; }
+      .field.choice .field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .field.choice > .chips { grid-column: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+      .field.choice .chip { padding: 0 4px; font-size: 0.8125rem; }
+      details.advanced { padding-top: 0; }
+      details.advanced summary { min-height: 36px; }
+      .plan { padding: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -364,6 +421,7 @@
               <button type="button" class="primary" id="copyBtn">Copy</button>
               <button type="button" id="shareBtn">Share</button>
               <button type="button" id="saveBtn">Save</button>
+              <button type="button" id="recipesBtn2" class="phone-only">Recipes</button>
               <button type="button" id="resetBtn">Reset</button>
             </div>
           </div>
@@ -660,7 +718,7 @@
           onclick: () => { s[key] = p; show(); changed(); haptic(); } }));
         const sync = () => chips.forEach((c, i) => c.setAttribute("aria-pressed", String(s[key] === opts.presets[i])));
         refreshers.push(sync); sync();
-        wrap.append(h("div", { class: "chips" }, chips));
+        wrap.append(h("div", { class: "chips presets" }, chips));
       }
       return wrap;
     }
@@ -669,7 +727,7 @@
       const chips = options.map(([v, l]) => h("button", { type: "button", class: "chip", text: l, onclick: () => { set(v); haptic(); } }));
       const sync = () => chips.forEach((c, i) => c.setAttribute("aria-pressed", String(get() === options[i][0])));
       refreshers.push(sync); sync();
-      return h("div", { class: "field" }, h("div", { class: "field-label", text: label }), h("div", { class: "chips" }, chips));
+      return h("div", { class: "field choice", role: "group", "aria-label": label }, h("div", { class: "field-label", text: label }), h("div", { class: "chips" }, chips));
     }
 
     function renderControls() {
@@ -681,14 +739,14 @@
         h("button", { type: "button", role: "tab", "aria-selected": String(k === m), text: v.tab,
           onclick: () => { state.mode = k; planAnchor = "now"; structural(); } })));
 
-      $("#scaleSeg").replaceChildren(...[["flour", "Flour"], ["pieces", cap(M.many)], ["total", "Total dough"]].map(([k, l]) =>
+      $("#scaleSeg").replaceChildren(...[["flour", "Flour"], ["pieces", cap(M.many)], ["total", "Total"]].map(([k, l]) =>
         h("button", { type: "button", text: l, "aria-pressed": String(s.scaleBy === k),
           onclick: () => { s.scaleBy = k; structural(); } })));
 
       const fields = [];
       if (m === "pizza") {
         fields.push(
-          chipGroup("Leavening", [["instant", "Instant dry yeast"], ["sourdough", "Sourdough"]], () => s.leaven, v => { s.leaven = v; structural(); }),
+          chipGroup("Leavening", [["instant", "Yeast"], ["sourdough", "Sourdough"]], () => s.leaven, v => { s.leaven = v; structural(); }),
           chipGroup("Proofing", [["sameDay", "Same day"], ["nextDay", "Next day"]], () => s.proof, v => {
             s.proof = v; Object.assign(s, PROOF[v]); planAnchor = "now"; structural();
           }));
@@ -706,6 +764,7 @@
       if (leavened(m, s)) adv.push(makeField("starterHyd", "Starter hydration", { unit: "%" }));
       if (yeasted(m, s) && m !== "pizza") adv.push(makeField("yeastPct", "Instant yeast", { unit: "%" }));
       adv.push(makeField("pieceWeight", `Weight per ${M.one}`));
+      adv.push(chipGroup("Units", [["g", "Grams"], ["oz", "Ounces"]], () => state.units, v => { state.units = v; structural(); }));
       adv.push(h("button", { type: "button", class: "text-btn", text: "Reset this mode to defaults",
         onclick: () => { state.byMode[m] = { ...MODE_DEFAULTS[m] }; planAnchor = "now"; structural(); toast("Defaults restored"); } }));
       $("#advFields").replaceChildren(...adv);
@@ -923,6 +982,7 @@
       saveState(); toast(`Saved “${name}”`);
     });
     $("#recipesBtn").addEventListener("click", () => { renderSaved(); $("#recipesDlg").showModal(); });
+    $("#recipesBtn2").addEventListener("click", () => { renderSaved(); $("#recipesDlg").showModal(); });
     $("#recipesClose").addEventListener("click", () => $("#recipesDlg").close());
     $("#bakeAt").addEventListener("change", e => {
       const d = new Date(e.target.value);

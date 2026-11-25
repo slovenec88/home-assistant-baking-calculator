@@ -190,6 +190,41 @@
       .recipe.open .recipe-body { display: grid; }
       #toast { bottom: 110px; }
     }
+
+    /* ===== Polish: bold dark glass ===== */
+    :root, :root:root {
+      color-scheme: dark;
+      --primary: #ffb86b; --primary-container: #ff8a3d; --on-primary-container: #2a1100;
+      --secondary-container: #2a2540; --on-secondary-container: #f4f1fb;
+      --water: #4cc9f0; --flour: #ffd166; --starter: #ef8f5f; --yeast: #ff5d8f; --salt: #b8b2cc;
+      --ink: #f4f1fb; --muted: #b4adc9; --line: rgba(255, 255, 255, 0.1); --paper: #0d0b14; --card: #171425;
+      --field: #221e33; --stat: rgba(255, 255, 255, 0.06); --warn: #ff8f8a; --focus-ring: rgba(255, 138, 61, 0.35); --shadow: none;
+    }
+    body {
+      background: radial-gradient(1100px 600px at 85% -10%, #2f2060 0, transparent 60%),
+                  radial-gradient(900px 500px at -10% 15%, #4a1f45 0, transparent 55%), var(--paper);
+      background-attachment: fixed;
+    }
+    .panel { background: rgba(28, 24, 46, 0.62); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-color: rgba(255, 255, 255, 0.09); border-radius: 28px; }
+    .segmented { background: rgba(255, 255, 255, 0.06); }
+    .segmented button[aria-selected="true"], .segmented button[aria-pressed="true"], .chip[aria-pressed="true"] {
+      color: #240c10; background: linear-gradient(135deg, #ff9a45, #ff5d8f); }
+    .stepper button { color: #240c10; background: linear-gradient(135deg, #ff9a45, #ff6a7a); }
+    .stepper input { background: rgba(255, 255, 255, 0.07); }
+    .chip { background: transparent; }
+    .ing .amt { font-size: 1.45rem; font-weight: 900; }
+    .ing .bar { height: 10px; background: rgba(255, 255, 255, 0.08); }
+    .ing .bar i { box-shadow: 0 0 14px var(--c); }
+    .result-main { color: #240c10; background: linear-gradient(135deg, #ff9a45, #ff5d8f); box-shadow: 0 10px 30px rgba(255, 93, 143, 0.28); }
+    .total { font-size: 2.3rem; font-weight: 950; letter-spacing: -0.02em; }
+    .actions button { background: rgba(255, 255, 255, 0.05); }
+    .actions button.primary { color: #240c10; background: linear-gradient(135deg, #ff9a45, #ff5d8f); }
+    .step.bake { color: #240c10; background: linear-gradient(135deg, #ff9a45, #ff5d8f); }
+    .step.bake .what span, .step.bake .when span { color: #4d1f2c; }
+    .step .timer-btn { background: transparent; }
+    .step .timer-btn.running { color: #240c10; background: #ffb86b; }
+    .saved-item button, .dlg-actions button.primary { color: #240c10; background: #ff9a45; }
+    @media (max-width: 760px) { .recipe { background: #171425; backdrop-filter: none; } }
   </style>
 </head>
 <body>

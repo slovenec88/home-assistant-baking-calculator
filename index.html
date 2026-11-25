@@ -190,6 +190,124 @@
       .recipe.open .recipe-body { display: grid; }
       #toast { bottom: 112px; }
     }
+
+    /* ===== Apple glass (grouped lists, system blue, translucent bars) ===== */
+    :root:root {
+      color-scheme: light dark;
+      --paper: #f2f2f7; --card: #ffffff; --ink: #1c1c1e; --muted: #6c6c70;
+      --line: rgba(60, 60, 67, 0.16); --field: rgba(118, 118, 128, 0.12); --stat: transparent;
+      --primary: #007aff; --on-primary: #ffffff; --tint: rgba(0, 122, 255, 0.12);
+      --primary-container: rgba(0, 122, 255, 0.12); --on-primary-container: #007aff;
+      --secondary-container: rgba(118, 118, 128, 0.12); --on-secondary-container: #1c1c1e;
+      --knob: #ffffff;
+      --glass: rgba(255, 255, 255, 0.64); --glass-edge: rgba(255, 255, 255, 0.7);
+      --flour: #ff9500; --water: #007aff; --starter: #a2845e; --yeast: #ff2d55; --salt: #8e8e93;
+      --warn: #ff3b30; --focus-ring: transparent; --shadow: none;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:root {
+        --paper: #000000; --card: #1c1c1e; --ink: #ffffff; --muted: #98989f;
+        --line: rgba(84, 84, 88, 0.6); --field: rgba(118, 118, 128, 0.24);
+        --primary: #0a84ff; --tint: rgba(10, 132, 255, 0.22);
+        --primary-container: rgba(10, 132, 255, 0.22); --on-primary-container: #0a84ff;
+        --secondary-container: rgba(118, 118, 128, 0.24); --on-secondary-container: #ffffff;
+        --knob: #636366;
+        --glass: rgba(44, 44, 46, 0.6); --glass-edge: rgba(255, 255, 255, 0.12);
+        --flour: #ff9f0a; --water: #0a84ff; --starter: #ac8e68; --yeast: #ff375f; --salt: #98989f; --warn: #ff453a;
+      }
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif; letter-spacing: -0.01em; }
+    .app { width: min(880px, 100%); padding: 0 16px 16px; }
+    .shell { gap: 16px; }
+    button:focus-visible, input:focus-visible, summary:focus-visible { box-shadow: none; outline: 3px solid var(--primary); outline-offset: 2px; }
+
+    /* sticky glass bar: content scrolls underneath it */
+    .topbar { position: sticky; top: 0; z-index: 30; margin: 0 -16px; padding: 12px 16px; gap: 8px;
+      background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--line); }
+    .segmented { padding: 2px; gap: 2px; border-radius: 999px; background: var(--field); }
+    .segmented button { min-height: 32px; border-radius: 999px; color: var(--ink); font-size: 0.9375rem; font-weight: 500; }
+    .segmented button[aria-selected="true"], .segmented button[aria-pressed="true"] { color: var(--ink); background: var(--knob); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+    .segmented.small button { min-height: 28px; font-size: 0.875rem; }
+    .icon-btn { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; color: var(--primary); background: var(--tint); font-weight: 600; }
+
+    /* grouped inset list */
+    .panel { border: 0; border-radius: 20px; background: var(--card); box-shadow: none; }
+    .form { padding: 0; gap: 0; }
+    .form > .field, .form > .fields > .field, .form > details { padding: 12px 16px; }
+    .form > * + * { border-top: 1px solid var(--line); }
+    .fields { gap: 0; }
+    .fields > .field + .field { border-top: 1px solid var(--line); }
+    .field { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; row-gap: 12px; }
+    .field > .chips, .field > .segmented { grid-column: 1 / -1; }
+    .field:has(> .segmented) { grid-template-columns: 1fr; }
+    .field-label { flex-direction: column; align-items: flex-start; gap: 0; color: var(--ink); font-size: 1.0625rem; font-weight: 400; }
+    .field-label small { color: var(--muted); font-size: 0.8125rem; }
+
+    /* compact stepper: value sits next to the circular controls */
+    .stepper { grid-template-columns: 36px auto 36px; gap: 4px; align-items: center; }
+    .stepper button { min-height: 36px; border-radius: 999px; color: var(--primary); background: var(--tint); font-size: 1.25rem; font-weight: 500; }
+    .stepper button:active { filter: none; transform: scale(0.97); }
+    .stepper .input-wrap { display: flex; align-items: baseline; justify-content: center; gap: 2px; min-width: 76px; }
+    .stepper input { width: 56px; min-height: 36px; padding: 0; background: transparent; font-size: 1.0625rem; font-weight: 600; text-align: right; }
+    .stepper input:focus { box-shadow: none; }
+    .stepper input[aria-invalid="true"] { box-shadow: none; color: var(--warn); }
+    .stepper .unit { position: static; transform: none; color: var(--muted); font-size: 0.9375rem; font-weight: 400; }
+    .chip { min-height: 32px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--field); color: var(--ink); font-size: 0.9375rem; font-weight: 500; }
+    .chip[aria-pressed="true"] { color: #fff; background: var(--primary); font-weight: 600; }
+    details.advanced { border-top: 1px solid var(--line); }
+    details.advanced summary { color: var(--primary); font-size: 1.0625rem; font-weight: 400; }
+    .text-btn { border: 0; color: var(--primary); background: var(--tint); font-weight: 600; }
+
+    /* result */
+    .recipe-body { padding: 16px; gap: 16px; }
+    .recipe-head h2 { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.02em; }
+    .ing .name { font-size: 1.0625rem; font-weight: 400; }
+    .ing .amt { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.02em; }
+    .ing .bp { color: var(--muted); }
+    .ing .bar { height: 6px; background: var(--field); }
+    .stat { padding: 0; border-radius: 0; background: transparent; }
+    .stat .label { color: var(--muted); font-weight: 400; }
+    .stat .value { font-size: 1.1875rem; font-weight: 600; }
+    .result-main { padding: 16px 0 0; border-radius: 0; color: var(--ink); background: transparent; border-top: 1px solid var(--line); }
+    .result-main .label { font-size: 1.0625rem; font-weight: 400; }
+    .total { font-size: 2.5rem; font-weight: 600; letter-spacing: -0.03em; }
+    .actions button { min-height: 44px; border: 0; border-radius: 999px; color: var(--primary); background: var(--tint); font-weight: 600; }
+    .actions button.primary { color: #fff; background: var(--primary); }
+    .actions button#resetBtn { color: var(--muted); }
+
+    /* plan as a list */
+    .plan { padding: 16px; gap: 8px; }
+    .plan h2 { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.02em; }
+    .plan-controls input[type="datetime-local"] { min-height: 40px; border-radius: 10px; background: var(--field); font-weight: 500; }
+    .steps { gap: 0; }
+    .step { padding: 12px 0; border-radius: 0; background: transparent; border-top: 1px solid var(--line); }
+    .step:first-child { border-top: 0; }
+    .step.bake { color: var(--primary); background: transparent; }
+    .step.bake .what span, .step.bake .when span { color: var(--muted); }
+    .step .when b, .step .what b { font-weight: 600; }
+    .step .timer-btn { border: 0; border-radius: 999px; color: var(--primary); background: var(--tint); font-weight: 600; }
+    .step .timer-btn.running { color: #fff; background: var(--primary); }
+    .step.past .when { color: var(--warn); }
+
+    /* overlays are glass */
+    dialog { border: 1px solid var(--glass-edge); border-radius: 28px; background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); box-shadow: none; }
+    dialog input[type="text"] { border-radius: 10px; background: var(--field); }
+    .dlg-actions button { color: var(--primary); background: transparent; font-weight: 600; }
+    .dlg-actions button.primary { color: var(--primary); background: transparent; }
+    .saved-item { border-radius: 14px; background: var(--field); }
+    .saved-item button { color: var(--primary); background: var(--tint); font-weight: 600; }
+    #toast { border: 1px solid var(--glass-edge); color: var(--ink); background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); font-weight: 500; }
+
+    @media (max-width: 760px) {
+      .app { padding: 0 12px 12px; }
+      .topbar { margin: 0 -12px; padding: 8px 12px; }
+      .recipe { background: var(--glass); border: 1px solid var(--glass-edge); border-bottom: 0; border-radius: 28px 28px 0 0;
+        -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); box-shadow: none; }
+      .recipe-handle .grip { width: 36px; height: 5px; background: var(--muted); opacity: 0.4; }
+      .recipe-handle .summary { font-weight: 600; }
+      .recipe-body { padding: 8px 16px 16px; }
+    }
   </style>
 </head>
 <body>

@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dough Calculator</title>
+<style>
+  /* ---- recipe drawer (structure only; each style supplies colours and shape through its variables) ---- */
+  main { padding-bottom: 48px; }
+  #drawer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; width: min(560px, 100%); margin: 0 auto; background: var(--bg); color: var(--ink); border-top: 2px solid var(--line); }
+  #dh { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 44px; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; touch-action: none; }
+  #dh .grip { width: 36px; height: 4px; border-radius: 2px; background: var(--mid, var(--muted, currentColor)); opacity: 0.6; }
+  #dl { font-size: 0.875rem; font-weight: 600; }
+  #dbody { display: grid; gap: 10px; padding: 4px 16px 16px; max-height: 56dvh; overflow: auto; }
+  #dbody[hidden] { display: none; }
+  #dsave { display: flex; gap: 8px; }
+  #dname { flex: 1; min-width: 0; height: 48px; padding: 0 12px; border: 2px solid var(--line); background: transparent; color: inherit; font: inherit; border-radius: inherit; }
+  #dgo { height: 48px; padding: 0 18px; border: 0; background: var(--accent); color: var(--on-accent, #000); font: inherit; font-weight: 700; cursor: pointer; border-radius: inherit; }
+  #dlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  #dlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: inherit; }
+  #dlist b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #dlist span { display: block; color: var(--mid, var(--muted, inherit)); font-size: 0.8125rem; }
+  #dlist button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; border-radius: inherit; }
+  #dlist button.load { background: var(--accent); color: var(--on-accent, #000); border-color: transparent; font-weight: 700; }
+  #dnote { margin: 0; padding: 8px 10px; border: 1px solid var(--line); font-size: 0.8125rem; line-height: 1.35; color: var(--mid, var(--muted, inherit)); border-radius: inherit; }
+  #dnote[hidden] { display: none; }
+  #dlist .empty { display: block; border: 0; color: var(--mid, var(--muted, inherit)); padding: 4px 0; }
+
+  :root { color-scheme: light dark; --bg: #e6e3db; --panel: #f3f1eb; --ink: #1d1d1b; --mid: #86827a; --line: #cdc9be; --accent: #e4531c; --on-accent: #ffffff; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #141412; --panel: #1f1f1c; --ink: #eceae3; --mid: #8d897f; --line: #2d2d29; --accent: #ff6a2b; --on-accent: #141412; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.2 "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif; }
+  button, input { font: inherit; color: inherit; } button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  main { width: min(480px, 100%); margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 48px; }
+  #tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #tabs button { height: 44px; border: 0; border-radius: 12px; background: var(--panel); color: var(--mid); font-size: 0.875rem; font-weight: 500; }
+  #tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+  #tabs button[aria-selected="true"]::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 8px; vertical-align: 1px; }
+  #bar { display: flex; height: 8px; gap: 3px; margin: 2px 4px; }
+  #bar span { font-size: 0; padding: 0; border-radius: 4px; min-width: 4px; transition: flex-grow 150ms ease-out; }
+  #bar span[data-id="flour"] { background: var(--ink); } #bar span[data-id="water"] { background: var(--accent); }
+  #bar span[data-id="starter"], #bar span[data-id="yeast"] { background: var(--mid); } #bar span[data-id="salt"] { background: var(--line); }
+  #inputs { display: grid; gap: 6px; }
+  .in { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 4px 8px; padding: 10px 14px 0; background: var(--panel); border-radius: 16px; overflow: hidden; }
+  .in .lab { align-self: start; font-size: 0.875rem; color: var(--mid); font-weight: 500; }
+  .in .pre { display: flex; gap: 6px; margin-top: 6px; }
+  .in .pre button { height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: none; font-size: 0.8125rem; color: var(--mid); }
+  .in .pre button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .num { display: flex; align-items: baseline; gap: 6px; border: 0; background: none; padding: 0; min-height: 52px; font-weight: 300; font-size: 54px; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; cursor: ew-resize; user-select: none; -webkit-user-select: none; }
+  .num small { font-size: 1.0625rem; letter-spacing: 0; color: var(--mid); font-weight: 400; }
+  .num input { width: 3.4ch; font: inherit; letter-spacing: inherit; background: transparent; border: 0; border-bottom: 2px solid var(--accent); text-align: right; padding: 0 2px; }
+  .ruler { grid-column: 1 / -1; height: 14px; margin: 2px -14px 0; position: relative; opacity: 0.5; -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+  .ruler::after { content: ""; position: absolute; left: 50%; top: 0; width: 2px; height: 14px; margin-left: -1px; background: var(--accent); }
+  #choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } #choices[hidden] { display: none; }
+  #choices .grp { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 12px; background: var(--panel); }
+  #choices button { height: 38px; border: 0; border-radius: 9px; background: none; font-size: 0.8125rem; color: var(--mid); }
+  #choices button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  #out { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  #out .cell { padding: 8px 14px; background: var(--panel); border-radius: 14px; }
+  #out .cell small { display: block; font-size: 0.8125rem; color: var(--mid); }
+  #out .cell b { display: block; margin-top: 2px; font-weight: 300; font-size: 30px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  #out .total { grid-column: 1 / -1; background: var(--accent); color: var(--on-accent); padding: 10px 16px; }
+  #out .total small { color: var(--on-accent); opacity: 0.8; } #out .total b { font-size: 52px; }
+  #plan { margin: 0; padding: 0 4px; color: var(--mid); font-size: 0.8125rem; line-height: 1.35; }
+  #drawer { border-top: 0; background: var(--panel); box-shadow: 0 -1px 0 var(--line); border-radius: 20px 20px 0 0; }
+  #dname, #dgo, #dlist li, #dlist button { border-radius: 12px; }
+
+  #tabs { grid-template-columns: repeat(2, 1fr); }
+  #choices { grid-template-columns: 1fr !important; gap: 6px !important; }
+  #choices .grp { grid-column: 1 / -1; }
+  .in > div:first-child { display: flex; flex-wrap: wrap; align-items: center; align-self: start; gap: 2px 10px; }
+  .in .pre { margin-top: 0; }
+  .num { min-height: 44px; }
+  /* one-screen fit: Bread and Pizza share the phone height with the choice row and the recipe handle */
+  main { gap: 6px !important; padding-top: 8px !important; }
+  #tabs button { height: 40px !important; }
+  .num { min-height: 40px !important; font-size: 44px !important; }
+  .num small { font-size: 0.9375rem !important; }
+  .ruler { height: 12px !important; margin-top: 2px !important; }
+  .in { padding-top: 6px !important; }
+  #choices button { height: 44px !important; font-weight: 600 !important; font-size: 0.9375rem !important; }
+  #out { gap: 6px !important; }
+  #out .cell { padding-top: 5px !important; padding-bottom: 5px !important; }
+  #out .cell b { font-size: 26px !important; }
+  #out .total { padding-top: 6px !important; padding-bottom: 6px !important; }
+  #out .total b { font-size: 44px !important; }
+  #out .cell[data-id="hyd"] { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; padding: 2px 6px !important; border: 0 !important; box-shadow: none !important; background: none !important; color: var(--mid) !important; }
+  #out .cell[data-id="hyd"] small { color: var(--mid) !important; } #out .cell[data-id="hyd"] b { font-size: 18px !important; margin: 0 !important; color: var(--ink) !important; font-family: inherit !important; }
+  /* pizza has two choice rows (leavening, then proofing), so its inputs and outputs are a little tighter */
+  body[data-mode="pizza"] .num { min-height: 34px !important; font-size: 40px !important; }
+  body[data-mode="pizza"] .ruler { height: 8px !important; }
+  body[data-mode="pizza"] .in { padding-top: 4px !important; }
+  body[data-mode="pizza"] #out .cell { padding-top: 3px !important; padding-bottom: 3px !important; }
+  body[data-mode="pizza"] #out .cell b { font-size: 22px !important; }
+  body[data-mode="pizza"] #out .total b { font-size: 36px !important; }
+  body[data-mode="pizza"] #choices button { height: 40px !important; }
+  body[data-mode="pizza"] #plan { font-size: 0.75rem !important; }
+
+</style>
+</head>
+<body>
+<main>
+  <nav id="tabs" role="tablist" aria-label="Dough type"></nav>
+  <div id="bar" role="img" aria-label="Proportions of the dough"></div>
+  <section id="inputs"></section>
+  <div id="choices"></div>
+  <section id="out" aria-live="polite"></section>
+  <p id="plan"></p>
+</main>
+<aside id="drawer" aria-label="Saved recipes">
+  <button id="dh" type="button" aria-expanded="false" aria-controls="dbody"><span class="grip" aria-hidden="true"></span><span id="dl">Recipes</span></button>
+  <div id="dbody" hidden>
+    <form id="dsave"><input id="dname" type="text" maxlength="40" aria-label="Recipe name" placeholder="Name this recipe" autocomplete="off"><button id="dgo" type="submit">Save</button></form>
+    <p id="dnote" hidden>Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.</p>
+    <ul id="dlist"></ul>
+  </div>
+</aside>
+
+<script>
+/* Shared core: the original calculator maths and saved state, behind a small API.
+   Every concept below only draws a different interface on top of this. */
+const Dough = (() => {
+  const STORAGE_KEY = "dough-ratio-assistant:v1";
+  const DEFAULTS = {
+    mode: "sourdough",
+    sourdough: { flour: 500, hydration: 70, starterPct: 5 },
+    instant: { flour: 500, hydration: 70 },
+    pizza: { balls: 8, hydration: 64, yeastType: "instant", proof: "nextDay", instantYeastPct: { sameDay: 0.5, nextDay: 0.11 } }
+  };
+  const PIZZA_BALL_WEIGHT = 300, PIZZA_SALT_PCT = 2, PIZZA_STARTER_PCT = { sameDay: 25, nextDay: 20 };
+  const clampNumber = (v, min, max, fb) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fb; };
+
+  /* ---- original calculations, unchanged ---- */
+  function calculateSourdough({ flour, hydration, starterPct }) {
+    const starter = flour * starterPct / 100, starterFlour = starter / 2, starterWater = starter / 2;
+    const totalFlour = flour + starterFlour;
+    const water = Math.max(0, totalFlour * hydration / 100 - starterWater);
+    const salt = totalFlour * 0.02;
+    return { totalDough: flour + starter + water + salt, water, starter, salt, finalHydration: (water + starterWater) / totalFlour * 100 };
+  }
+  function calculateInstant({ flour, hydration }) {
+    const water = flour * hydration / 100, salt = flour * 0.02, yeast = flour * 0.007;
+    return { totalDough: flour + water + salt + yeast, water, yeast, salt, finalHydration: hydration };
+  }
+  function calculatePizzaInstant({ balls, hydration, yeastPct }) {
+    const target = balls * PIZZA_BALL_WEIGHT, h = hydration / 100, y = yeastPct / 100, s = PIZZA_SALT_PCT / 100;
+    const flour = target / (1 + h + s + y);
+    return { totalDough: target, flour, water: flour * h, yeast: flour * y, salt: flour * s, finalHydration: hydration };
+  }
+  function calculatePizzaSourdough({ balls, hydration, starterPct }) {
+    const target = balls * PIZZA_BALL_WEIGHT, h = hydration / 100, st = starterPct / 100, s = PIZZA_SALT_PCT / 100;
+    const totalFlour = target / (1 + h + s);
+    const starter = totalFlour * st, starterWater = starter / 2, starterFlour = starter / 2;
+    const water = Math.max(0, totalFlour * h - starterWater);
+    return { totalDough: target, flour: totalFlour - starterFlour, water, starter, salt: totalFlour * s, finalHydration: (water + starterWater) / totalFlour * 100 };
+  }
+  function calculatePizza(p) {
+    return p.yeastType === "sourdough"
+      ? calculatePizzaSourdough({ balls: p.balls, hydration: p.hydration, starterPct: PIZZA_STARTER_PCT[p.proof] })
+      : calculatePizzaInstant({ balls: p.balls, hydration: p.hydration, yeastPct: p.instantYeastPct[p.proof] });
+  }
+  function bakeManualText(mode, p) {
+    if (mode === "pizza") {
+      if (p.yeastType === "instant" && p.proof === "sameDay") return "Mix, knead, rest 4h at room temp, divide, let it double, prep, and bake.";
+      if (p.yeastType === "instant") return "Mix, knead, chill 24h, rest 2h at room temp, divide, let it double, prep, and bake.";
+      if (p.proof === "sameDay") return "Mix, knead, rest 4h at room temp, divide, let it double, prep, and bake.";
+      return "Mix, knead, rest 2h at room temp, divide, chill 24h, let it double, prep, and bake.";
+    }
+    if (mode === "sourdough") return "Mix, knead, rest 4h at room temp, put into a basket, prep, and bake.";
+    return "Mix, knead, rest 1-2h at room temp, put into a basket for a short time, prep, and bake.";
+  }
+
+  /* ---- original saved state (pizza hydration and yeast are not remembered, as before) ---- */
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const sp = saved && saved.pizza;
+      return {
+        ...DEFAULTS, ...saved,
+        sourdough: { ...DEFAULTS.sourdough, ...(saved && saved.sourdough) },
+        instant: { ...DEFAULTS.instant, ...(saved && saved.instant) },
+        pizza: {
+          ...DEFAULTS.pizza,
+          balls: sp && sp.balls ? sp.balls : DEFAULTS.pizza.balls,
+          yeastType: sp && sp.yeastType ? sp.yeastType : DEFAULTS.pizza.yeastType,
+          proof: sp && sp.proof ? sp.proof : DEFAULTS.pizza.proof,
+          hydration: DEFAULTS.pizza.hydration,
+          instantYeastPct: { ...DEFAULTS.pizza.instantYeastPct }
+        }
+      };
+    } catch { return structuredClone(DEFAULTS); }
+  }
+  let state = loadState();
+  if (!["sourdough", "instant", "pizza"].includes(state.mode)) state.mode = "sourdough";
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, pizza: { ...state.pizza, hydration: DEFAULTS.pizza.hydration, instantYeastPct: { ...DEFAULTS.pizza.instantYeastPct } } }));
+    } catch {}
+  }
+
+  /* ---- field specs: what the UI may edit, with limits and presets ---- */
+  const SPEC = {
+    flour:          { label: "Flour",        unit: "g", min: 1,    max: 10000, step: 1,    drag: 10,   dec: 0, presets: [800, 1200] },
+    hydration:      { label: "Hydration",    unit: "%", min: 40,   max: 100,   step: 1,    drag: 1,    dec: 0, presets: [65, 70] },
+    starterPct:     { label: "Starter",      unit: "%", min: 0,    max: 100,   step: 0.5,  drag: 0.5,  dec: 1, presets: [5, 10] },
+    balls:          { label: "Dough balls",  unit: "",  min: 1,    max: 48,    step: 1,    drag: 1,    dec: 0, presets: [4, 8, 12] },
+    pizzaHydration: { label: "Hydration",    unit: "%", min: 50,   max: 80,    step: 1,    drag: 1,    dec: 0, presets: [60, 64, 70] },
+    yeastPct:       { label: "Yeast",        unit: "%", min: 0.01, max: 2,     step: 0.01, drag: 0.01, dec: 2, presets: [] }
+  };
+  const CHOICES = {
+    yeastType: { label: "Leavening", options: [["instant", "Instant yeast"], ["sourdough", "Sourdough"]] },
+    proof:     { label: "Proofing",  options: [["sameDay", "Same day"], ["nextDay", "Next day"]] }
+  };
+  const MODES = [["sourdough", "Sourdough"], ["instant", "Instant yeast"], ["pizza", "Pizza"]];
+  const MODE_TITLE = { sourdough: "Sourdough bread", instant: "Instant yeast bread", pizza: "Neapolitan pizza" };
+
+  function breadValues() {
+    const cur = state[state.mode];
+    return {
+      flour: clampNumber(cur.flour, 1, 10000, 500),
+      hydration: clampNumber(cur.hydration, 40, 100, 70),
+      starterPct: clampNumber(state.sourdough.starterPct, 0, 100, 5)
+    };
+  }
+  function pizzaValues() {
+    const p = state.pizza;
+    return {
+      balls: clampNumber(p.balls, 1, 48, 8),
+      hydration: clampNumber(p.hydration, 50, 80, 64),
+      yeastType: p.yeastType === "sourdough" ? "sourdough" : "instant",
+      proof: p.proof === "sameDay" ? "sameDay" : "nextDay",
+      instantYeastPct: {
+        sameDay: clampNumber(p.instantYeastPct.sameDay, 0.01, 2, 0.5),
+        nextDay: clampNumber(p.instantYeastPct.nextDay, 0.01, 2, 0.11)
+      }
+    };
+  }
+
+  function fieldKeys() {
+    if (state.mode === "pizza") return ["balls", "pizzaHydration"].concat(pizzaValues().yeastType === "instant" ? ["yeastPct"] : []);
+    return state.mode === "sourdough" ? ["flour", "hydration", "starterPct"] : ["flour", "hydration"];
+  }
+  function valueOf(key) {
+    if (state.mode === "pizza") {
+      const p = pizzaValues();
+      return { balls: p.balls, pizzaHydration: p.hydration, yeastPct: p.instantYeastPct[p.proof] }[key];
+    }
+    return breadValues()[key];
+  }
+
+  /* ---- plan as a timeline. Only the rests named in the original text have hours; the rest are untimed steps ---- */
+  function timeline(mode, p) {
+    const T = (label, hours, text, fridge) => ({ label, hours: hours || null, text: text || (hours ? hours + " h" : ""), fridge: !!fridge });
+    if (mode === "sourdough") return [T("Mix"), T("Rest", 4), T("Basket"), T("Bake")];
+    if (mode === "instant") return [T("Mix"), T("Rest", 1.5, "1-2 h"), T("Basket"), T("Bake")];
+    const sd = p.yeastType === "sourdough", next = p.proof === "nextDay";
+    if (!next) return [T("Mix"), T("Rest", 4), T("Divide"), T("Double"), T("Bake")];
+    if (!sd) return [T("Mix"), T("Chill", 24, "24 h", true), T("Rest", 2), T("Divide"), T("Double"), T("Bake")];
+    return [T("Mix"), T("Rest", 2), T("Divide"), T("Chill", 24, "24 h", true), T("Double"), T("Bake")];
+  }
+
+  function model() {
+    const mode = state.mode, pizza = mode === "pizza";
+    const p = pizza ? pizzaValues() : null, v = pizza ? null : breadValues();
+    const r = pizza ? calculatePizza(p) : mode === "sourdough" ? calculateSourdough(v) : calculateInstant(v);
+    const hasStarter = pizza ? p.yeastType === "sourdough" : mode === "sourdough";
+    const hasYeast = pizza ? p.yeastType === "instant" : mode === "instant";
+    const parts = [{ id: "flour", label: "Flour", g: pizza ? r.flour : v.flour }, { id: "water", label: "Water", g: r.water }];
+    if (hasStarter) parts.push({ id: "starter", label: "Starter", g: r.starter });
+    if (hasYeast) parts.push({ id: "yeast", label: "Yeast", g: r.yeast });
+    parts.push({ id: "salt", label: "Salt", g: r.salt });
+    return {
+      mode, title: MODE_TITLE[mode], pizza: p, total: r.totalDough, finalHydration: r.finalHydration, parts,
+      fields: fieldKeys().map(k => ({ key: k, ...SPEC[k], value: valueOf(k) })),
+      choices: pizza ? Object.entries(CHOICES).map(([k, c]) => ({ key: k, ...c, value: p[k] })) : [],
+      plan: bakeManualText(mode, p),
+      timeline: timeline(mode, p),
+      pieces: pizza ? p.balls : null
+    };
+  }
+
+  const subs = new Set();
+  const emit = () => { saveState(); const m = model(); subs.forEach(fn => fn(m)); };
+
+  function set(key, raw) {
+    const sp = SPEC[key];
+    let val = clampNumber(raw, sp.min, sp.max, valueOf(key));
+    val = Math.round(val * 10 ** sp.dec) / 10 ** sp.dec;
+    if (key === "balls") state.pizza.balls = val;
+    else if (key === "pizzaHydration") state.pizza.hydration = val;
+    else if (key === "yeastPct") { const p = pizzaValues(); state.pizza = { ...state.pizza, instantYeastPct: { ...p.instantYeastPct, [p.proof]: val } }; }
+    else if (key === "starterPct") state.sourdough.starterPct = val;
+    else state[state.mode][key] = val;
+    emit();
+  }
+  function choose(key, val) {
+    if (key === "mode") state.mode = val;
+    else { state.pizza = { ...pizzaValues(), instantYeastPct: { ...pizzaValues().instantYeastPct } }; state.pizza[key] = val; }
+    emit();
+  }
+
+  /* ---- formatting ---- */
+  const fmtG = g => (g < 10 ? String(Math.round(g * 10) / 10) : Math.round(g).toLocaleString()) + " g";
+  const fmtNum = (v, dec) => String(Number(v.toFixed(dec)));
+  const fmtVal = f => fmtNum(f.value, f.dec) + (f.unit ? (f.unit === "g" ? " g" : f.unit) : "");
+
+  /* ---- drag helper: pointer drags change a field in whole steps; a short press is a tap ---- */
+  const haptic = () => { try { navigator.vibrate && navigator.vibrate(6); } catch {} };
+  function drag(el, { key, axis = "x", pxPerStep = 10, onTap, onStart, onEnd, target }) {
+    let start = null;
+    el.style.touchAction = axis === "x" ? "pan-y" : "pan-x";
+    el.addEventListener("pointerdown", e => {
+      if (e.button) return;
+      const k = typeof key === "function" ? key(e) : key;
+      start = { id: e.pointerId, x: e.clientX, y: e.clientY, k, v: k ? valueOf(k) : 0, last: 0, moved: false };
+      try { el.setPointerCapture(e.pointerId); } catch {}
+      onStart && onStart(k, e);
+    });
+    el.addEventListener("pointermove", e => {
+      if (!start || e.pointerId !== start.id || !start.k) return;
+      const d = axis === "x" ? e.clientX - start.x : start.y - e.clientY;
+      if (!start.moved && Math.abs(d) < 5) return;
+      start.moved = true;
+      const steps = Math.round(d / pxPerStep(start.k));
+      if (steps !== start.last) { start.last = steps; set(start.k, start.v + steps * SPEC[start.k].drag); haptic(); }
+    });
+    const end = e => {
+      if (!start || e.pointerId !== start.id) return;
+      const s = start; start = null;
+      if (!s.moved && e.type === "pointerup") onTap && onTap(s.k, e);
+      onEnd && onEnd(s.k, s.moved);
+    };
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+  }
+
+  const step = (key, dir) => set(key, valueOf(key) + dir * SPEC[key].step);
+  /* ---- saved recipes: a snapshot is everything needed to rebuild the screen ---- */
+  function snapshot() {
+    const p = pizzaValues();
+    return { mode: state.mode, sourdough: { ...state.sourdough }, instant: { ...state.instant },
+             pizza: { balls: p.balls, hydration: p.hydration, yeastType: p.yeastType, proof: p.proof, instantYeastPct: { ...p.instantYeastPct } } };
+  }
+  function restore(s) {
+    if (!s || !["sourdough", "instant", "pizza"].includes(s.mode)) return false;
+    state.mode = s.mode;
+    state.sourdough = { ...DEFAULTS.sourdough, ...s.sourdough };
+    state.instant = { ...DEFAULTS.instant, ...s.instant };
+    state.pizza = { ...DEFAULTS.pizza, ...s.pizza, instantYeastPct: { ...DEFAULTS.pizza.instantYeastPct, ...(s.pizza && s.pizza.instantYeastPct) } };
+    emit(); return true;
+  }
+
+  return { model, set, choose, step, snapshot, restore, spec: SPEC, modes: MODES, drag, fmtG, fmtNum, fmtVal, subscribe: fn => { subs.add(fn); fn(model()); },
+           api: { calculateSourdough, calculateInstant, calculatePizza } };
+})();
+window.DoughRatioAssistant = Dough.api;
+
+/* ---- Game helpers for the canvas concepts ---- */
+const Game = (() => {
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = { out: t => 1 - Math.pow(1 - t, 3), inOut: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, back: t => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); } };
+  // critically damped-ish spring on o[key]; velocity kept in o[key + "V"]
+  function spring(o, key, target, dt, k = 220, d = 22) {
+    const v = (o[key + "V"] || 0) + (target - o[key]) * k * dt;
+    o[key + "V"] = v * Math.max(0, 1 - d * dt);
+    o[key] += o[key + "V"] * dt;
+    return o[key];
+  }
+  function canvas(el, draw) {
+    const ctx = el.getContext("2d");
+    let w = 1, h = 1, dpr = 1, last = performance.now(), t = 0, raf = 0;
+    function resize() { const r = el.getBoundingClientRect(); dpr = Math.min(window.devicePixelRatio || 1, 3); w = Math.max(1, Math.round(r.width)); h = Math.max(1, Math.round(r.height)); el.width = Math.round(w * dpr); el.height = Math.round(h * dpr); }
+    new ResizeObserver(resize).observe(el); resize();
+    function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw(ctx, w, h, dt, t); raf = requestAnimationFrame(frame); }
+    raf = requestAnimationFrame(frame);
+    document.addEventListener("visibilitychange", () => { cancelAnimationFrame(raf); if (!document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } });
+    return { ctx, size: () => ({ w, h }) };
+  }
+  function pointer(el, hd) {
+    el.style.touchAction = "none";
+    const pos = e => { const r = el.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    el.addEventListener("pointerdown", e => { if (e.button) return; try { el.setPointerCapture(e.pointerId); } catch {} hd.down && hd.down(...pos(e), e); });
+    el.addEventListener("pointermove", e => { hd.move && hd.move(...pos(e), e); });
+    const up = e => { hd.up && hd.up(...pos(e), e); };
+    el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+  }
+  // simple particle pool
+  function particles() {
+    const ps = [];
+    return {
+      burst(x, y, n, o = {}) { for (let i = 0; i < n; i++) { const a = (o.angle ?? -Math.PI / 2) + (Math.random() - 0.5) * (o.spread ?? Math.PI * 2), s = (o.speed ?? 120) * (0.4 + Math.random() * 0.8); ps.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0, max: (o.life ?? 0.7) * (0.6 + Math.random() * 0.6), r: (o.r ?? 3) * (0.6 + Math.random() * 0.8), c: o.color || "#fff", g: o.gravity ?? 300 }); } },
+      update(dt) { for (let i = ps.length - 1; i >= 0; i--) { const p = ps[i]; p.life += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.life >= p.max) ps.splice(i, 1); } },
+      draw(ctx) { for (const p of ps) { ctx.globalAlpha = Math.max(0, 1 - p.life / p.max); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832); ctx.fill(); } ctx.globalAlpha = 1; }
+    };
+  }
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return { clamp, lerp, ease, spring, canvas, pointer, particles, css };
+})();
+
+/* ---- Accessibility layer for canvas concepts: every field and choice as real, visually hidden controls ---- */
+Dough.a11y = function () {
+  const st = document.createElement("style");
+  st.textContent = ".dough-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.dough-sr:focus-within{position:fixed;left:8px;right:8px;bottom:8px;width:auto;height:auto;clip:auto;white-space:normal;background:#fff;color:#000;border:2px solid #000;border-radius:12px;padding:10px;z-index:1000;display:grid;gap:8px;font:16px system-ui}.dough-sr label{display:grid;gap:2px}.dough-sr input,.dough-sr button{font:inherit;min-height:40px}";
+  document.head.append(st);
+  const root = document.createElement("div"); root.className = "dough-sr"; root.setAttribute("role", "group"); root.setAttribute("aria-label", "Dough calculator controls"); document.body.append(root);
+  const live = document.createElement("div"); live.setAttribute("aria-live", "polite");
+  let sig = "";
+  Dough.subscribe(m => {
+    const s = m.mode + m.fields.map(f => f.key).join() + m.choices.map(c => c.key).join();
+    if (s !== sig) {
+      sig = s; root.replaceChildren();
+      const modes = document.createElement("div");
+      Dough.modes.forEach(([v, l]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = l; b.setAttribute("aria-pressed", String(m.mode === v)); b.onclick = () => Dough.choose("mode", v); modes.append(b); });
+      root.append(modes);
+      m.fields.forEach(f => { const lab = document.createElement("label"); lab.textContent = `${f.label} (${f.unit || "count"})`; const i = document.createElement("input"); i.type = "number"; i.min = f.min; i.max = f.max; i.step = f.step; i.dataset.key = f.key; i.addEventListener("change", () => Dough.set(f.key, parseFloat(i.value))); lab.append(i); root.append(lab); });
+      m.choices.forEach(c => { const g = document.createElement("div"); g.setAttribute("role", "group"); g.setAttribute("aria-label", c.label); c.options.forEach(([v, l]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = l; b.dataset.k = c.key; b.dataset.v = v; b.onclick = () => Dough.choose(c.key, v); g.append(b); }); root.append(g); });
+      root.append(live);
+    }
+    m.fields.forEach(f => { const i = root.querySelector(`input[data-key="${f.key}"]`); if (i && document.activeElement !== i) i.value = f.value; });
+    m.choices.forEach(c => root.querySelectorAll(`button[data-k="${c.key}"]`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === c.value))));
+    root.querySelectorAll("div > button:not([data-k])").forEach((b, i) => b.setAttribute("aria-pressed", String(Dough.modes[i] && Dough.modes[i][0] === m.mode)));
+    live.textContent = `${m.title}. Total dough ${Dough.fmtG(m.total)}. ` + m.parts.map(p => `${p.label} ${Dough.fmtG(p.g)}`).join(", ") + ".";
+  });
+};
+
+/* ---- Shared UI helpers: mode tabs, results table, plan line (styled with the concept's --ink, --muted, --line vars) ---- */
+Dough.ui = (() => {
+  const css = ".dough-res{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;color:var(--ink)}.dough-res .l{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line)}.dough-res .l span:last-child{font-weight:600;font-variant-numeric:tabular-nums}.dough-res .tot{grid-column:1/-1;border:0;padding-top:6px}.dough-res .tot span:first-child{font-size:1.125rem}.dough-res .tot span:last-child{font:700 40px/1 ui-monospace,'SF Mono',Consolas,monospace;letter-spacing:-.03em}";
+  let injected = false;
+  const inject = () => { if (injected) return; injected = true; const s = document.createElement("style"); s.textContent = css; document.head.append(s); };
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  return {
+    el,
+    tabs(root) { Dough.subscribe(m => { root.setAttribute("role", "tablist"); root.replaceChildren(...Dough.modes.map(([v, l]) => { const b = el("button", null, l); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(m.mode === v)); b.onclick = () => Dough.choose("mode", v); return b; })); }); },
+    results(root, opts = {}) {
+      inject(); root.classList.add("dough-res"); root.setAttribute("aria-live", "polite");
+      Dough.subscribe(m => {
+        root.replaceChildren();
+        m.parts.filter(p => opts.flour || m.mode === "pizza" || p.id !== "flour").forEach(p => { const d = el("div", "l"); d.append(el("span", null, p.label === "Yeast" ? "Instant yeast" : p.label), el("span", null, Dough.fmtG(p.g))); root.append(d); });
+        const h = el("div", "l"); h.append(el("span", null, "Final hydration"), el("span", null, Dough.fmtNum(m.finalHydration, 1) + "%")); root.append(h);
+        const t = el("div", "l tot"); t.append(el("span", null, "Total dough"), el("span", null, Dough.fmtG(m.total))); root.append(t);
+      });
+    },
+    plan(root) { Dough.subscribe(m => { root.textContent = m.plan; }); },
+    // field range used to turn a value into a position on a dial or rail (flour is logarithmic)
+    range: { flour: { min: 100, max: 5000, log: true }, hydration: { min: 40, max: 100 }, starterPct: { min: 0, max: 30 }, balls: { min: 1, max: 24 }, pizzaHydration: { min: 50, max: 80 }, yeastPct: { min: 0.01, max: 1 } },
+    toT(k, v) { const r = this.range[k]; const t = r.log ? Math.log(Math.max(v, r.min) / r.min) / Math.log(r.max / r.min) : (v - r.min) / (r.max - r.min); return Math.min(1, Math.max(0, t)); },
+    toV(k, t) { const r = this.range[k]; return r.log ? r.min * Math.pow(r.max / r.min, t) : r.min + (r.max - r.min) * t; }
+  };
+})();
+
+/* ---- Recipe store (separate from the live values; survives reloads) ---- */
+Dough.recipes = (() => {
+  const KEY = "dough-ratio-assistant:recipes:v1";
+  // Some views block browser storage (previews, sandboxed frames, private modes). Detect that, and keep recipes in memory for the session instead of failing silently.
+  let persistent = (() => { try { localStorage.setItem("__dough_probe", "1"); localStorage.removeItem("__dough_probe"); return true; } catch { return false; } })();
+  let mem = [];
+  const read = () => { if (!persistent) return mem.slice(); try { const a = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(a) ? a : []; } catch { return mem.slice(); } };
+  const write = a => { mem = a.slice(); if (!persistent) return; try { localStorage.setItem(KEY, JSON.stringify(a)); } catch { persistent = false; } };
+  const listeners = new Set();
+  const notify = () => listeners.forEach(fn => fn(read()));
+  return {
+    list: read,
+    persistent: () => persistent,
+    subscribe(fn) { listeners.add(fn); fn(read()); },
+    save(name) { const a = read(); const r = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: (name || "").trim().slice(0, 40) || "Recipe", at: Date.now(), snap: Dough.snapshot() }; a.unshift(r); write(a); notify(); return r; },
+    remove(id) { write(read().filter(r => r.id !== id)); notify(); },
+    load(id) { const r = read().find(r => r.id === id); return r ? Dough.restore(r.snap) : false; },
+    summary(snap) {
+      if (snap.mode === "pizza") { const p = snap.pizza; return `Pizza, ${p.balls} balls, ${p.hydration}%, ${p.yeastType === "sourdough" ? "sourdough" : "yeast"}, ${p.proof === "nextDay" ? "next day" : "same day"}`; }
+      const c = snap[snap.mode]; return `${snap.mode === "sourdough" ? "Sourdough" : "Instant yeast"}, ${c.flour} g, ${c.hydration}%` + (snap.mode === "sourdough" ? `, ${snap.sourdough.starterPct}% starter` : "");
+    }
+  };
+})();
+
+</script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const H = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k] === true ? "" : attrs[k]); } kids.forEach(c => e.append(c)); return e; };
+  const PX = { flour: 3, hydration: 10, pizzaHydration: 10, starterPct: 12, balls: 30, yeastPct: 6 };
+  let m = null, structKey = "";
+  Dough.a11y();
+
+  // Bread and Pizza are the two top tabs. Sourdough or yeast is a choice inside each, so bread has it too, just like pizza.
+  function groupsOf(model) {
+    if (model.mode === "pizza") return model.choices.map(c => ({ ...c, apply: v => Dough.choose(c.key, v) }));
+    return [{ label: "Leavening", options: [["sourdough", "Sourdough"], ["instant", "Yeast"]], value: model.mode, apply: v => switchBread(v) }];
+  }
+  function switchBread(to) {
+    const f0 = Dough.model().fields, flour = f0.find(x => x.key === "flour").value, hyd = f0.find(x => x.key === "hydration").value;
+    Dough.choose("mode", to); Dough.set("flour", flour); Dough.set("hydration", hyd);   // keep your numbers when the leavening changes
+  }
+  function goTop(v) {
+    const cur = Dough.model();
+    if (v === "pizza" && cur.mode !== "pizza") { Dough.choose("yeastType", cur.mode === "sourdough" ? "sourdough" : "instant"); Dough.choose("mode", "pizza"); }
+    if (v === "bread" && cur.mode === "pizza") Dough.choose("mode", cur.pizza.yeastType === "sourdough" ? "sourdough" : "instant");
+  }
+  function build(model) {
+    const isPizza = model.mode === "pizza";
+    $("#tabs").replaceChildren(...[["bread", "Bread"], ["pizza", "Pizza"]].map(([v, l]) => H("button", { type: "button", role: "tab", text: l, "aria-selected": String((v === "pizza") === isPizza), onclick: () => goTop(v) })));
+    const inputs = $("#inputs"); inputs.replaceChildren();
+    model.fields.forEach(f => {
+      const num = H("button", { type: "button", class: "num", role: "spinbutton", "aria-label": f.label, "aria-valuenow": f.value, "aria-valuemin": f.min, "aria-valuemax": f.max, "data-key": f.key });
+      const val = H("span", { class: "val" }), unit = H("small", { text: f.unit });
+      num.append(val, unit);
+      const ruler = H("div", { class: "ruler", "aria-hidden": "true" });
+      const px = PX[f.key] || 10, every = Math.ceil(8 / px);
+      ruler.style.backgroundImage = `repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px ${px * every}px)`;
+      const pre = H("div", { class: "pre" }, ...f.presets.map(p => H("button", { type: "button", "data-p": p, text: p + (f.unit === "g" ? " g" : f.unit), onclick: () => Dough.set(f.key, p) })));
+      inputs.append(H("div", { class: "in", "data-key": f.key }, H("div", {}, H("div", { class: "lab", text: f.label }), pre), num, ruler));
+      Dough.drag(num, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onTap: () => edit(num, f) });
+      num.addEventListener("keydown", e => {
+        const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+        if (dir) { e.preventDefault(); Dough.step(f.key, dir); }
+        if (e.key === "Enter") { e.preventDefault(); edit(num, f); }
+      });
+    });
+    const groups = groupsOf(model);
+    const ch = $("#choices"); ch.hidden = !groups.length; ch.replaceChildren();
+    groups.forEach(g => ch.append(H("div", { class: "grp", role: "group", "aria-label": g.label },
+      ...g.options.map(([v, l]) => H("button", { type: "button", text: l === "Instant yeast" ? "Yeast" : l, "data-v": v, "aria-pressed": String(g.value === v), onclick: () => g.apply(v) })))));
+  }
+
+  function edit(num, f) {
+    const val = num.querySelector(".val"); if (num.querySelector("input")) return;
+    const input = H("input", { type: "text", inputmode: "decimal", "aria-label": f.label, value: Dough.fmtNum(valueOf(f.key), f.dec) });
+    input.style.width = "4.2ch";
+    val.replaceChildren(input); input.focus(); input.select();
+    const done = () => { const v = parseFloat(input.value.replace(",", ".")); if (Number.isFinite(v)) Dough.set(f.key, v); else paint(m); };
+    input.addEventListener("blur", done);
+    input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = ""; input.blur(); } });
+    input.addEventListener("pointerdown", e => e.stopPropagation());
+  }
+  const valueOf = key => m.fields.find(f => f.key === key).value;
+
+  function paint(model) {
+    m = model;
+    model.fields.forEach(f => {
+      const row = $(`.in[data-key="${f.key}"]`); if (!row) return;
+      const val = row.querySelector(".val");
+      if (!val.querySelector("input")) val.textContent = Dough.fmtNum(f.value, f.dec);
+      row.querySelector(".num").setAttribute("aria-valuenow", f.value);
+      row.querySelector(".ruler").style.backgroundPositionX = `${-(f.value / f.drag) * (PX[f.key] || 10)}px`;
+      row.querySelectorAll(".pre button").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.p) === f.value)));
+    });
+    groupsOf(model).forEach(g => document.querySelectorAll(`#choices [role=group][aria-label="${g.label}"] button`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === g.value))));
+
+    // proportion bar
+    const bar = $("#bar");
+    if (bar.children.length !== model.parts.length || [...bar.children].some((s, i) => s.dataset.id !== model.parts[i].id)) {
+      bar.replaceChildren(...model.parts.map(p => H("span", { "data-id": p.id, text: p.label })));
+    }
+    model.parts.forEach((p, i) => { const s = bar.children[i]; s.style.flexGrow = p.g; s.style.flexBasis = "0"; s.textContent = p.g / model.total > 0.07 ? p.label : ""; });
+
+    // outputs
+    const out = $("#out"); out.replaceChildren();
+    model.parts.filter(p => model.mode === "pizza" || p.id !== "flour").forEach(p => out.append(H("div", { class: "cell", "data-id": p.id }, H("small", { text: p.label === "Yeast" ? "Instant yeast" : p.label }), H("b", { text: Dough.fmtG(p.g) }))));
+    out.append(H("div", { class: "cell", "data-id": "hyd" }, H("small", { text: "Final hydration" }), H("b", { text: Dough.fmtNum(model.finalHydration, 1) + "%" })));
+    out.append(H("div", { class: "cell total" }, H("small", { text: "Total dough" }), H("b", { text: Dough.fmtG(model.total) })));
+    $("#plan").textContent = model.plan;
+  }
+
+  Dough.subscribe(model => {
+    const key = model.mode + "|" + model.fields.map(f => f.key).join() + "|" + model.choices.map(c => c.value).join();
+    if (key !== structKey) { structKey = key; build(model); }
+    paint(model);
+  });
+})();
+</script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s), dh = $("#dh"), body = $("#dbody"), vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+  let skip = false, y0 = null, flash = 0, confirmId = null, confirmT = 0;
+  function setOpen(o) {
+    body.hidden = !o; dh.setAttribute("aria-expanded", String(o));
+    if (o) { const m = Dough.model(); const f = m.fields[0]; $("#dname").placeholder = m.title + ", " + Dough.fmtVal(f); }
+  }
+  dh.addEventListener("pointerdown", e => { y0 = e.clientY; try { dh.setPointerCapture(e.pointerId); } catch {} });
+  dh.addEventListener("pointerup", e => { if (y0 == null) return; const d = y0 - e.clientY; y0 = null; if (Math.abs(d) > 24) { setOpen(d > 0); skip = true; } });
+  dh.addEventListener("click", () => { if (skip) { skip = false; return; } setOpen(body.hidden); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !body.hidden) setOpen(false); });
+  $("#dsave").addEventListener("submit", e => {
+    e.preventDefault(); const m = Dough.model();
+    const name = $("#dname").value.trim() || (m.title + ", " + Dough.fmtVal(m.fields[0]));
+    Dough.recipes.save(name); $("#dname").value = ""; vib(10);
+    $("#dl").textContent = Dough.recipes.persistent() ? "Saved" : "Saved for this session"; clearTimeout(flash); flash = setTimeout(() => draw(Dough.recipes.list()), 1500);
+  });
+  function draw(list) {
+    $("#dl").textContent = list.length ? `Recipes (${list.length})` : "Recipes";
+    $("#dnote").hidden = Dough.recipes.persistent();
+    const ul = $("#dlist"); ul.replaceChildren();
+    if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No saved recipes."; ul.append(li); return; }
+    list.forEach(r => {
+      const li = document.createElement("li");
+      const t = document.createElement("div"); const b = document.createElement("b"); b.textContent = r.name; const s = document.createElement("span"); s.textContent = Dough.recipes.summary(r.snap); t.append(b, s);
+      const load = document.createElement("button"); load.type = "button"; load.className = "load"; load.textContent = "Load"; load.setAttribute("aria-label", "Load " + r.name);
+      load.onclick = () => { Dough.recipes.load(r.id); setOpen(false); vib(10); };
+      const del = document.createElement("button"); del.type = "button"; del.textContent = confirmId === r.id ? "Sure?" : "Delete"; del.setAttribute("aria-label", "Delete " + r.name);
+      del.onclick = () => { if (confirmId === r.id) { confirmId = null; Dough.recipes.remove(r.id); } else { confirmId = r.id; clearTimeout(confirmT); confirmT = setTimeout(() => { confirmId = null; draw(Dough.recipes.list()); }, 2500); draw(Dough.recipes.list()); } };
+      li.append(t, load, del); ul.append(li);
+    });
+  }
+  Dough.recipes.subscribe(draw);
+})();
+</script>
+</body>
+</html>

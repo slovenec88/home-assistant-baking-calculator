@@ -67,7 +67,8 @@
   #dname { background: var(--disp); color: var(--disp-ink); border-color: var(--disp); border-radius: 6px; } #dgo { border-radius: 6px; } #dlist li, #dlist button, #dnote { border-radius: 6px; }
 
   #tabs { grid-template-columns: repeat(2, 1fr); }
-  #choices .grp:only-child { grid-column: 1 / -1; }
+  #choices { grid-template-columns: 1fr !important; gap: 6px !important; }
+  #choices .grp { grid-column: 1 / -1; }
   .in > div:first-child { display: flex; flex-wrap: wrap; align-items: center; align-self: start; gap: 2px 10px; }
   .in .pre { margin-top: 0; }
   .num { min-height: 44px; }
@@ -78,7 +79,7 @@
   .num small { font-size: 0.9375rem !important; }
   .ruler { height: 12px !important; margin-top: 2px !important; }
   .in { padding-top: 6px !important; }
-  #choices button { height: 36px !important; }
+  #choices button { height: 44px !important; font-weight: 600 !important; font-size: 0.9375rem !important; }
   #out { gap: 6px !important; }
   #out .cell { padding-top: 5px !important; padding-bottom: 5px !important; }
   #out .cell b { font-size: 26px !important; }
@@ -86,15 +87,24 @@
   #out .total b { font-size: 44px !important; }
   #out .cell[data-id="hyd"] { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; padding: 2px 6px !important; border: 0 !important; box-shadow: none !important; background: none !important; color: var(--mid) !important; }
   #out .cell[data-id="hyd"] small { color: var(--mid) !important; } #out .cell[data-id="hyd"] b { font-size: 18px !important; margin: 0 !important; color: var(--ink) !important; font-family: inherit !important; }
+  /* pizza has two choice rows (leavening, then proofing), so its inputs and outputs are a little tighter */
+  body[data-mode="pizza"] .num { min-height: 34px !important; font-size: 40px !important; }
+  body[data-mode="pizza"] .ruler { height: 8px !important; }
+  body[data-mode="pizza"] .in { padding-top: 4px !important; }
+  body[data-mode="pizza"] #out .cell { padding-top: 3px !important; padding-bottom: 3px !important; }
+  body[data-mode="pizza"] #out .cell b { font-size: 22px !important; }
+  body[data-mode="pizza"] #out .total b { font-size: 36px !important; }
+  body[data-mode="pizza"] #choices button { height: 40px !important; }
+  body[data-mode="pizza"] #plan { font-size: 0.75rem !important; }
 
 </style>
 </head>
 <body>
 <main>
   <nav id="tabs" role="tablist" aria-label="Dough type"></nav>
+  <div id="choices"></div>
   <div id="bar" role="img" aria-label="Proportions of the dough"></div>
   <section id="inputs"></section>
-  <div id="choices"></div>
   <section id="out" aria-live="polite"></section>
   <p id="plan"></p>
 </main>
@@ -527,7 +537,7 @@ Dough.recipes = (() => {
   const valueOf = key => m.fields.find(f => f.key === key).value;
 
   function paint(model) {
-    m = model;
+    m = model; document.body.dataset.mode = model.mode;
     model.fields.forEach(f => {
       const row = $(`.in[data-key="${f.key}"]`); if (!row) return;
       const val = row.querySelector(".val");

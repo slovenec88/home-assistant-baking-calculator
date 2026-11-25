@@ -32,8 +32,7 @@
   .num input { width: 3.4ch; font: inherit; letter-spacing: inherit; background: transparent; border: 0; text-align: right; padding: 0 2px; }
   .ruler { grid-column: 1 / -1; position: relative; }
   .ruler::after { content: ""; position: absolute; left: 50%; transition: height 300ms var(--spring); }
-  #choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } #choices[hidden] { display: none; }
-  #choices .grp:only-child { grid-column: 1 / -1; }
+  #choices { display: grid; grid-template-columns: 1fr; gap: 6px; } #choices[hidden] { display: none; }
   #choices .grp { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
   #out { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   #out .total { grid-column: 1 / -1; }
@@ -72,6 +71,15 @@
   #swatches button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--sw); }
   #swatches button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ring-gap, var(--bg)), 0 0 0 6px var(--sw); transform: scale(1.04); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; transition-duration: 0.01ms !important; transition-delay: 0s !important; } }
+  /* pizza has two choice rows (leavening, then proofing), so its inputs and outputs are a little tighter */
+  body[data-mode="pizza"] .num { min-height: 34px; font-size: 40px; }
+  body[data-mode="pizza"] .ruler { height: 8px; }
+  body[data-mode="pizza"] .in { padding-top: 4px; }
+  body[data-mode="pizza"] #out .cell { padding-top: 3px; padding-bottom: 3px; }
+  body[data-mode="pizza"] #out .cell b { font-size: 22px; }
+  body[data-mode="pizza"] #out .total b { font-size: 36px; }
+  body[data-mode="pizza"] #choices button { height: 40px; }
+  body[data-mode="pizza"] #plan { font-size: 0.75rem; }
   /* ===== Rams panel, Material You Expressive: tonal palette from one hue that morphs, springy shapes, ink ripples ===== */
   @property --hue { syntax: "<number>"; inherits: true; initial-value: 50; }
   :root {
@@ -99,7 +107,7 @@
 
   /* connected button groups with a gliding selected pill */
   #tabs, .grp { background: var(--sc); border-radius: 30px; padding: 4px; gap: 4px; }
-  #tabs button, .grp button { height: 44px; border: 0; border-radius: 26px; background: none; color: var(--on-sc); font-size: 0.9375rem; font-weight: 600; letter-spacing: 0.01em; }
+  #tabs button, .grp button { height: 46px; border: 0; border-radius: 26px; background: none; color: var(--on-sc); font-size: 0.9375rem; font-weight: 600; letter-spacing: 0.01em; }
   #tabs button[aria-selected="true"], .grp button[aria-pressed="true"] { color: var(--on-primary); }
   .glide { background: var(--primary); border-radius: 26px; }
   #tabs button:active, .grp button:active { border-radius: 14px; }
@@ -147,9 +155,9 @@
 <body data-ripple="1" data-glide="spring">
 <main>
   <div id="tabwrap"><nav id="tabs" role="tablist" aria-label="Dough type"></nav><span class="glide" id="tabglide" aria-hidden="true"></span></div>
+  <div id="choices"></div>
   <div id="bar" role="img" aria-label="Proportions of the dough"></div>
   <section id="inputs"></section>
-  <div id="choices"></div>
   <section id="out" aria-live="polite"></section>
   <p id="plan"></p>
 </main>
@@ -631,7 +639,7 @@ Dough.recipes = (() => {
   const valueOf = key => m.fields.find(f => f.key === key).value;
 
   function paint(model) {
-    m = model;
+    m = model; document.body.dataset.mode = model.mode;
     model.fields.forEach(f => {
       const row = $(`.in[data-key="${f.key}"]`); if (!row) return;
       const val = row.querySelector(".val");

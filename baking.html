@@ -1,1081 +1,434 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dough Calculator</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      --primary: #6750a4;
-      --primary-container: #eaddff;
-      --on-primary-container: #21005d;
-      --secondary-container: #e8def8;
-      --on-secondary-container: #1d192b;
-      --tertiary-container: #ffd8e4;
-      --on-tertiary-container: #31111d;
-      --water-container: #d3e3fd;
-      --on-water-container: #041e49;
-      --flour-container: #fff8c5;
-      --on-flour-container: #332d00;
-      --starter-container: #efddcf;
-      --on-starter-container: #2b170b;
-      --salt-container: #fffbfe;
-      --on-salt-container: #1d1b20;
-      --ink: #1d1b20;
-      --muted: #49454f;
-      --line: #cac4d0;
-      --paper: #fffbfe;
-      --card: #fffbfe;
-      --field: #ece6f0;
-      --stat: #f3edf7;
-      --focus-ring: rgba(103, 80, 164, 0.14);
-      --shadow: 0 1px 2px rgba(29, 27, 32, 0.10), 0 1px 3px rgba(29, 27, 32, 0.08);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --primary: #d0bcff;
-        --primary-container: #4f378b;
-        --on-primary-container: #eaddff;
-        --secondary-container: #4a4458;
-        --on-secondary-container: #e8def8;
-        --tertiary-container: #633b48;
-        --on-tertiary-container: #ffd8e4;
-        --water-container: #0b3d75;
-        --on-water-container: #d3e3fd;
-        --flour-container: #514500;
-        --on-flour-container: #fff8c5;
-        --starter-container: #4d3427;
-        --on-starter-container: #efddcf;
-        --salt-container: #2b2930;
-        --on-salt-container: #e6e1e5;
-        --ink: #e6e1e5;
-        --muted: #cac4d0;
-        --line: #49454f;
-        --paper: #141218;
-        --card: #211f26;
-        --field: #2b2930;
-        --stat: #2b2930;
-        --focus-ring: rgba(208, 188, 255, 0.18);
-        --shadow: none;
-      }
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: "Google Sans", Roboto, "Segoe UI", Arial, sans-serif;
-      color: var(--ink);
-      background: var(--paper);
-    }
-
-    button, input {
-      font: inherit;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    button {
-      outline: none;
-      user-select: none;
-      touch-action: manipulation;
-    }
-
-    button:focus-visible {
-      box-shadow: 0 0 0 3px var(--focus-ring);
-    }
-
-    .segmented button:focus-visible,
-    .chip:focus-visible,
-    .stepper button:focus-visible {
-      box-shadow: inset 0 0 0 2px var(--primary), 0 0 0 3px var(--focus-ring);
-    }
-
-    .segmented button:active,
-    .chip:active,
-    .stepper button:active {
-      filter: brightness(0.96);
-    }
-
-    .app {
-      width: min(760px, 100%);
-      margin: 0 auto;
-      padding: 12px;
-    }
-
-    .shell {
-      display: grid;
-      gap: 10px;
-    }
-
-    .topbar {
-      display: block;
-    }
-
-    .topbar .segmented {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .segmented {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      padding: 4px;
-      width: 100%;
-      border: 0;
-      border-radius: 999px;
-      background: var(--field);
-    }
-
-    .segmented button {
-      min-height: 40px;
-      border: 0;
-      border-radius: 999px;
-      color: var(--muted);
-      background: transparent;
-      cursor: pointer;
-      font-size: 0.86rem;
-      font-weight: 750;
-    }
-
-    .segmented button[aria-selected="true"] {
-      color: var(--on-primary-container);
-      background: var(--primary-container);
-      box-shadow: none;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.86fr);
-      gap: 10px;
-      align-items: start;
-    }
-
-    .panel {
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      background: var(--card);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .form {
-      padding: 12px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .section-title {
-      margin: 0;
-      font-size: 0.9rem;
-      letter-spacing: 0;
-      color: var(--muted);
-    }
-
-    .field-grid {
-      display: grid;
-      gap: 9px;
-    }
-
-    label,
-    .field-label {
-      display: grid;
-      gap: 5px;
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
-
-    .control-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 6px;
-      align-items: stretch;
-    }
-
-    .unit {
-      display: grid;
-      place-items: center;
-      min-width: 42px;
-      padding: 0 9px;
-      border: 0;
-      border-radius: 14px;
-      color: var(--muted);
-      background: var(--field);
-      font-size: 0.85rem;
-      font-weight: 800;
-    }
-
-    input[type="number"] {
-      width: 100%;
-      min-width: 0;
-      min-height: 44px;
-      padding: 7px 10px;
-      border: 0;
-      border-radius: 14px;
-      color: var(--ink);
-      background: var(--field);
-      font-size: 1rem;
-      font-weight: 750;
-      outline: none;
-    }
-
-    input[type="number"]:focus {
-      box-shadow: inset 0 -2px 0 var(--primary), 0 0 0 3px var(--focus-ring);
-    }
-
-    .chips {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-    }
-
-    .chips.two {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .preset-stack {
-      display: grid;
-      gap: 9px;
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 0;
-      min-height: 40px;
-      padding: 7px 12px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      color: var(--ink);
-      background: var(--card);
-      cursor: pointer;
-      font-size: 0.86rem;
-      font-weight: 800;
-    }
-
-    .chip[aria-pressed="true"] {
-      border-color: transparent;
-      color: var(--on-primary-container);
-      background: var(--primary-container);
-    }
-
-    .stepper {
-      display: grid;
-      grid-template-columns: 44px minmax(0, 1fr) 44px;
-      gap: 6px;
-      align-items: stretch;
-    }
-
-    .stepper button {
-      min-height: 44px;
-      border: 0;
-      border-radius: 999px;
-      color: var(--on-primary-container);
-      background: var(--primary-container);
-      cursor: pointer;
-      font-size: 1.2rem;
-      font-weight: 850;
-      line-height: 1;
-    }
-
-    .stepper output {
-      display: grid;
-      place-items: center;
-      min-height: 44px;
-      border-radius: 16px;
-      color: var(--ink);
-      background: var(--field);
-      font-size: 1rem;
-      font-weight: 850;
-    }
-
-    .hint {
-      margin: -3px 0 0;
-      color: var(--muted);
-      font-size: 0.74rem;
-      line-height: 1.25;
-    }
-
-    .results {
-      padding: 12px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 7px;
-    }
-
-    .stat {
-      min-height: 68px;
-      padding: 9px;
-      border: 0;
-      border-radius: 18px;
-      color: var(--ink);
-      background: var(--stat);
-    }
-
-    .stat .label {
-      color: inherit;
-      opacity: 0.78;
-      font-size: 0.7rem;
-      font-weight: 800;
-      line-height: 1.15;
-    }
-
-    .stat .value {
-      margin-top: 7px;
-      font-size: 1.35rem;
-      font-weight: 850;
-      line-height: 1;
-      letter-spacing: 0;
-    }
-
-    .stat.flour {
-      color: var(--on-flour-container);
-      background: var(--flour-container);
-    }
-
-    .stat.water {
-      color: var(--on-water-container);
-      background: var(--water-container);
-    }
-
-    .stat.starter,
-    .stat.yeast {
-      color: var(--on-starter-container);
-      background: var(--starter-container);
-    }
-
-    .stat.salt {
-      color: var(--on-salt-container);
-      background: var(--salt-container);
-      box-shadow: inset 0 0 0 1px var(--line);
-    }
-
-    .result-main {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 11px 12px;
-      border-top: 1px solid var(--line);
-      color: var(--on-primary-container);
-      background: var(--primary-container);
-    }
-
-    .result-main .label {
-      opacity: 0.85;
-      font-size: 0.78rem;
-      font-weight: 850;
-    }
-
-    .total {
-      font-size: 1.35rem;
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: 0;
-    }
-
-    .note {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.72rem;
-      line-height: 1.25;
-    }
-
-    .manual {
-      padding: 10px 12px;
-      border-radius: 18px;
-      color: var(--on-secondary-container);
-      background: var(--secondary-container);
-    }
-
-    .manual-title {
-      margin: 0 0 6px;
-      font-size: 0.72rem;
-      font-weight: 850;
-      line-height: 1.2;
-    }
-
-    .manual-text {
-      margin: 0;
-      font-size: 0.78rem;
-      font-weight: 650;
-      line-height: 1.35;
-    }
-
-    .mode-only[hidden] {
-      display: none;
-    }
-
-    .screenreader {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      white-space: nowrap;
-    }
-
-    @media (max-width: 760px) {
-      body {
-        background: var(--paper);
-      }
-
-      .app {
-        padding: 8px;
-      }
-
-      .layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 430px) {
-      .app {
-        padding: 7px;
-      }
-
-      .shell {
-        gap: 7px;
-      }
-
-      .segmented button {
-        min-height: 36px;
-      }
-
-      .form,
-      .results {
-        padding: 9px;
-      }
-
-      input[type="number"] {
-        min-height: 42px;
-      }
-
-      .chip {
-        min-height: 36px;
-      }
-
-      .result-main {
-        padding: 10px;
-      }
-
-      .total {
-        font-size: 1.18rem;
-      }
-
-      .stat {
-        min-height: 61px;
-        padding: 8px;
-      }
-
-      .stat .value {
-        margin-top: 5px;
-        font-size: 1.18rem;
-      }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dough Calculator</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f4f0e8; --ink: #20221f; --muted: #6f7168; --line: #d8d3c6; --card: #fbf9f4; --tint: #e7e1d2; --accent: #2f6b4f; --on-accent: #fff; --fridge: #5b88a8; --bake: #b4491e; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121411; --ink: #ecebe4; --muted: #9a9c92; --line: #2f322c; --card: #1b1d19; --tint: #262922; --accent: #6fcf9d; --on-accent: #0d1a12; --fridge: #6a9cbd; --bake: #f08a5c; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.25 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #app { width: min(480px, 100%); margin: 0 auto; min-height: 100dvh; padding: 0 12px 12px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 44px auto auto minmax(0, 1fr) auto; gap: 8px; }
+  #tabs { grid-row: 1; display: grid; grid-template-columns: repeat(3, 1fr); }
+  #ribbon { grid-row: 2; } #tray { grid-row: 3; } #work { grid-row: 4; } #plan { grid-row: 5; }
+  #tabs button { border: 0; background: none; color: var(--muted); font-weight: 500; border-bottom: 3px solid transparent; }
+  #tabs button[aria-selected="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--accent); }
+
+  #ribbon { width: 100%; height: auto; display: block; border-radius: 12px; }
+  #ribbon.over { outline: 3px dashed var(--accent); outline-offset: 3px; }
+  #ribbon text { font-family: inherit; fill: var(--ink); }
+  #ribbon .nm { font-size: 12px; font-weight: 700; }
+  #ribbon .hr { font-size: 11px; fill: var(--muted); }
+  #ribbon .inv { fill: #fff; }
+
+  #tray { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #tray[hidden] { display: none; }
+  .tile { min-height: 56px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); text-align: left; touch-action: none; position: relative; user-select: none; -webkit-user-select: none; }
+  .tile b { display: block; }
+  .tile small { color: var(--muted); }
+  .tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--tint); }
+  .tile.drag { z-index: 5; box-shadow: 0 1px 2px rgba(0,0,0,0.15); transition: none; }
+
+  #work { position: relative; padding-right: 68px; display: grid; align-content: start; gap: 8px; min-height: 0; }
+  #active { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 4px 0; min-height: 64px; }
+  #active .l { color: var(--muted); font-weight: 600; }
+  #active button, #active input { border: 0; background: none; font: 700 48px/1 ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; letter-spacing: -0.04em; color: var(--ink); text-align: right; padding: 0; font-variant-numeric: tabular-nums; }
+  #active input { width: 5ch; border-bottom: 2px solid var(--accent); border-radius: 0; }
+  #active .u { color: var(--muted); font-size: 1.125rem; font-weight: 600; margin-left: 4px; }
+  #stack { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  #stack li { position: relative; display: flex; justify-content: space-between; align-items: baseline; padding: 8px 12px; border-radius: 10px; background: var(--card); overflow: hidden; border: 1px solid transparent; }
+  #stack li::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--w); background: var(--tint); transition: width 150ms ease-out; }
+  #stack li > * { position: relative; }
+  #stack li.on { border-color: var(--accent); }
+  #stack .a { font: 700 22px/1 ui-monospace, "SF Mono", Consolas, monospace; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  #stack li.tot { background: var(--ink); color: var(--bg); } #stack li.tot::before { display: none; }
+  #chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); text-align: left; }
+  .chip small { display: block; color: var(--muted); font-size: 0.75rem; }
+  .chip b { font-variant-numeric: tabular-nums; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chip[aria-pressed="true"] small { color: var(--bg); opacity: 0.7; }
+
+  #rail { position: absolute; right: 0; top: 0; bottom: 0; width: 64px; touch-action: none; border-radius: 16px; background: var(--card); border: 1px solid var(--line); cursor: ns-resize; user-select: none; -webkit-user-select: none; }
+  #rail .trk { position: absolute; right: 14px; top: 14px; bottom: 14px; width: 6px; border-radius: 3px; background: var(--line); }
+  #rail .thumb { position: absolute; right: 3px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); top: calc((1 - var(--t, 0)) * (100% - 28px)); box-shadow: 0 0 0 4px var(--card); }
+  #rail .tick { position: absolute; left: 4px; transform: translateY(-50%); min-height: 28px; padding: 0 4px; border: 0; background: none; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  #rail .tick::after { content: ""; display: inline-block; width: 8px; height: 2px; background: var(--muted); margin-left: 3px; vertical-align: middle; }
+  #rail .tick.hit { color: var(--accent); font-weight: 700; }
+  #plan { margin: 0; color: var(--muted); font-size: 0.875rem; }
+</style>
 </head>
 <body>
-  <main class="app">
-    <div class="shell">
-      <header class="topbar">
-        <nav class="segmented" aria-label="Dough type">
-          <button type="button" id="sourdoughTab" aria-selected="true" data-mode="sourdough">Sourdough</button>
-          <button type="button" id="instantTab" aria-selected="false" data-mode="instant">Instant yeast</button>
-          <button type="button" id="pizzaTab" aria-selected="false" data-mode="pizza">Pizza</button>
-        </nav>
-      </header>
+<main id="app">
+  <nav id="tabs" role="tablist" aria-label="Dough type"></nav>
+  <svg id="ribbon" viewBox="0 0 351 84" role="img"></svg>
+  <div id="tray"></div>
+  <section id="work">
+    <div id="active"></div>
+    <ul id="stack" aria-live="polite"></ul>
+    <div id="chips" role="group" aria-label="Value to change with the slider"></div>
+    <div id="rail" role="slider" tabindex="0"><div class="trk"></div><div class="thumb"></div></div>
+  </section>
+  <p id="plan"></p>
+</main>
 
-      <section class="layout">
-        <form class="panel form" id="calculator" autocomplete="off">
-          <h2 class="section-title" id="modeTitle">Sourdough bread</h2>
+<script>
+/* Shared core: the original calculator maths and saved state, behind a small API.
+   Every concept below only draws a different interface on top of this. */
+const Dough = (() => {
+  const STORAGE_KEY = "dough-ratio-assistant:v1";
+  const DEFAULTS = {
+    mode: "sourdough",
+    sourdough: { flour: 500, hydration: 70, starterPct: 5 },
+    instant: { flour: 500, hydration: 70 },
+    pizza: { balls: 8, hydration: 64, yeastType: "instant", proof: "nextDay", instantYeastPct: { sameDay: 0.5, nextDay: 0.11 } }
+  };
+  const PIZZA_BALL_WEIGHT = 300, PIZZA_SALT_PCT = 2, PIZZA_STARTER_PCT = { sameDay: 25, nextDay: 20 };
+  const clampNumber = (v, min, max, fb) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fb; };
 
-          <div class="field-grid mode-only" data-visible-for="sourdough instant">
-            <label for="flour">
-              Flour weight
-              <span class="control-row">
-                <input id="flour" name="flour" type="number" min="1" max="10000" step="1" inputmode="decimal" value="500">
-                <span class="unit">g</span>
-              </span>
-            </label>
-            <div class="chips" aria-label="Flour presets">
-              <button class="chip" type="button" data-flour="800">800 g</button>
-              <button class="chip" type="button" data-flour="1200">1200 g</button>
-              <button class="chip" type="button" id="flourCustom">Custom</button>
-            </div>
-
-            <label for="hydration">
-              Hydration
-              <span class="control-row">
-                <input id="hydration" name="hydration" type="number" min="40" max="100" step="1" inputmode="decimal" value="70">
-                <span class="unit">%</span>
-              </span>
-            </label>
-            <div class="chips" aria-label="Hydration presets">
-              <button class="chip" type="button" data-hydration="65">65%</button>
-              <button class="chip" type="button" data-hydration="70">70%</button>
-              <button class="chip" type="button" id="hydrationCustom">Custom</button>
-            </div>
-
-            <div class="mode-only preset-stack" data-visible-for="sourdough">
-              <label for="starterPct">
-                Starter amount
-                <span class="control-row">
-                  <input id="starterPct" name="starterPct" type="number" min="0" max="100" step="0.5" inputmode="decimal" value="5">
-                  <span class="unit">%</span>
-                </span>
-              </label>
-              <div class="chips" aria-label="Starter presets">
-                <button class="chip" type="button" data-starter-pct="5">5%</button>
-                <button class="chip" type="button" data-starter-pct="10">10%</button>
-                <button class="chip" type="button" id="starterCustom">Custom</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="field-grid mode-only" data-visible-for="pizza" hidden>
-            <div class="field-label">
-              Dough balls
-              <span class="stepper">
-                <button type="button" data-pizza-step="balls" data-step="-1" aria-label="Decrease dough balls">-</button>
-                <output id="pizzaBalls">8</output>
-                <button type="button" data-pizza-step="balls" data-step="1" aria-label="Increase dough balls">+</button>
-              </span>
-            </div>
-
-            <div class="field-label">
-              Yeast type
-              <span class="chips two" aria-label="Pizza yeast type">
-                <button class="chip" type="button" data-pizza-yeast-type="instant">Instant dry</button>
-                <button class="chip" type="button" data-pizza-yeast-type="sourdough">Sourdough</button>
-              </span>
-            </div>
-
-            <div class="field-label">
-              Proofing time
-              <span class="chips two" aria-label="Pizza proofing time">
-                <button class="chip" type="button" data-pizza-proof="sameDay">Same day</button>
-                <button class="chip" type="button" data-pizza-proof="nextDay">Next day</button>
-              </span>
-            </div>
-
-            <div class="field-label">
-              Hydration
-              <span class="stepper">
-                <button type="button" data-pizza-step="hydration" data-step="-1" aria-label="Decrease hydration">-</button>
-                <output id="pizzaHydration">64%</output>
-                <button type="button" data-pizza-step="hydration" data-step="1" aria-label="Increase hydration">+</button>
-              </span>
-            </div>
-
-            <div class="field-label mode-only" data-visible-for="pizza-instant">
-              Instant yeast
-              <span class="stepper">
-                <button type="button" data-pizza-step="yeastPct" data-step="-0.01" aria-label="Decrease instant yeast">-</button>
-                <output id="pizzaYeastPct">0.11%</output>
-                <button type="button" data-pizza-step="yeastPct" data-step="0.01" aria-label="Increase instant yeast">+</button>
-              </span>
-            </div>
-          </div>
-        </form>
-
-        <aside class="panel results" aria-live="polite">
-          <div class="stats">
-            <div class="stat flour mode-only" data-visible-for="pizza">
-              <div class="label">Flour</div>
-              <output class="value" id="pizzaFlour">0 g</output>
-            </div>
-            <div class="stat water">
-              <div class="label">Required water</div>
-              <output class="value" id="water">0 g</output>
-            </div>
-            <div class="stat starter mode-only" data-visible-for="sourdough pizza">
-              <div class="label" id="starterLabel">Necessary starter</div>
-              <output class="value" id="starter">0 g</output>
-            </div>
-            <div class="stat yeast mode-only" data-visible-for="instant pizza">
-              <div class="label" id="yeastLabel">Instant yeast</div>
-              <output class="value" id="yeast">0 g</output>
-            </div>
-            <div class="stat salt">
-              <div class="label">Recommended salt</div>
-              <output class="value" id="salt">0 g</output>
-            </div>
-            <div class="stat">
-              <div class="label">Final hydration</div>
-              <output class="value" id="finalHydration">0%</output>
-            </div>
-          </div>
-
-          <div class="result-main">
-            <span class="label">Total dough</span>
-            <output class="total" id="totalDough">0 g</output>
-          </div>
-
-          <div class="manual mode-only" data-visible-for="sourdough instant pizza" hidden>
-            <p class="manual-title">Little bake plan</p>
-            <p class="manual-text" id="pizzaManual"></p>
-          </div>
-        </aside>
-      </section>
-    </div>
-  </main>
-
-  <script>
-    const STORAGE_KEY = "dough-ratio-assistant:v1";
-    const DEFAULTS = {
-      mode: "sourdough",
-      sourdough: { flour: 500, hydration: 70, starterPct: 5 },
-      instant: { flour: 500, hydration: 70 },
-      pizza: {
-        balls: 8,
-        hydration: 64,
-        yeastType: "instant",
-        proof: "nextDay",
-        instantYeastPct: { sameDay: 0.5, nextDay: 0.11 }
-      }
-    };
-
-    const PIZZA_BALL_WEIGHT = 300;
-    const PIZZA_SALT_PCT = 2;
-    const PIZZA_STARTER_PCT = { sameDay: 25, nextDay: 20 };
-
-    const el = {
-      modeTitle: document.querySelector("#modeTitle"),
-      tabs: [...document.querySelectorAll("[data-mode]")],
-      modeBlocks: [...document.querySelectorAll("[data-visible-for]")],
-      flourChips: [...document.querySelectorAll("[data-flour]")],
-      flourCustom: document.querySelector("#flourCustom"),
-      hydrationChips: [...document.querySelectorAll("[data-hydration]")],
-      hydrationCustom: document.querySelector("#hydrationCustom"),
-      starterChips: [...document.querySelectorAll("[data-starter-pct]")],
-      starterCustom: document.querySelector("#starterCustom"),
-      pizzaBalls: document.querySelector("#pizzaBalls"),
-      pizzaHydration: document.querySelector("#pizzaHydration"),
-      pizzaYeastPct: document.querySelector("#pizzaYeastPct"),
-      pizzaFlour: document.querySelector("#pizzaFlour"),
-      pizzaManual: document.querySelector("#pizzaManual"),
-      pizzaYeastTypeChips: [...document.querySelectorAll("[data-pizza-yeast-type]")],
-      pizzaProofChips: [...document.querySelectorAll("[data-pizza-proof]")],
-      pizzaStepButtons: [...document.querySelectorAll("[data-pizza-step]")],
-      flour: document.querySelector("#flour"),
-      hydration: document.querySelector("#hydration"),
-      starterPct: document.querySelector("#starterPct"),
-      totalDough: document.querySelector("#totalDough"),
-      water: document.querySelector("#water"),
-      starter: document.querySelector("#starter"),
-      starterLabel: document.querySelector("#starterLabel"),
-      yeast: document.querySelector("#yeast"),
-      yeastLabel: document.querySelector("#yeastLabel"),
-      salt: document.querySelector("#salt"),
-      finalHydration: document.querySelector("#finalHydration"),
-      formulaNote: null
-    };
-
-    let state = loadState();
-
-    function clampNumber(value, min, max, fallback) {
-      const parsed = Number(value);
-      if (!Number.isFinite(parsed)) return fallback;
-      return Math.min(max, Math.max(min, parsed));
+  /* ---- original calculations, unchanged ---- */
+  function calculateSourdough({ flour, hydration, starterPct }) {
+    const starter = flour * starterPct / 100, starterFlour = starter / 2, starterWater = starter / 2;
+    const totalFlour = flour + starterFlour;
+    const water = Math.max(0, totalFlour * hydration / 100 - starterWater);
+    const salt = totalFlour * 0.02;
+    return { totalDough: flour + starter + water + salt, water, starter, salt, finalHydration: (water + starterWater) / totalFlour * 100 };
+  }
+  function calculateInstant({ flour, hydration }) {
+    const water = flour * hydration / 100, salt = flour * 0.02, yeast = flour * 0.007;
+    return { totalDough: flour + water + salt + yeast, water, yeast, salt, finalHydration: hydration };
+  }
+  function calculatePizzaInstant({ balls, hydration, yeastPct }) {
+    const target = balls * PIZZA_BALL_WEIGHT, h = hydration / 100, y = yeastPct / 100, s = PIZZA_SALT_PCT / 100;
+    const flour = target / (1 + h + s + y);
+    return { totalDough: target, flour, water: flour * h, yeast: flour * y, salt: flour * s, finalHydration: hydration };
+  }
+  function calculatePizzaSourdough({ balls, hydration, starterPct }) {
+    const target = balls * PIZZA_BALL_WEIGHT, h = hydration / 100, st = starterPct / 100, s = PIZZA_SALT_PCT / 100;
+    const totalFlour = target / (1 + h + s);
+    const starter = totalFlour * st, starterWater = starter / 2, starterFlour = starter / 2;
+    const water = Math.max(0, totalFlour * h - starterWater);
+    return { totalDough: target, flour: totalFlour - starterFlour, water, starter, salt: totalFlour * s, finalHydration: (water + starterWater) / totalFlour * 100 };
+  }
+  function calculatePizza(p) {
+    return p.yeastType === "sourdough"
+      ? calculatePizzaSourdough({ balls: p.balls, hydration: p.hydration, starterPct: PIZZA_STARTER_PCT[p.proof] })
+      : calculatePizzaInstant({ balls: p.balls, hydration: p.hydration, yeastPct: p.instantYeastPct[p.proof] });
+  }
+  function bakeManualText(mode, p) {
+    if (mode === "pizza") {
+      if (p.yeastType === "instant" && p.proof === "sameDay") return "Mix, knead, rest 4h at room temp, divide, let it double, prep, and bake.";
+      if (p.yeastType === "instant") return "Mix, knead, chill 24h, rest 2h at room temp, divide, let it double, prep, and bake.";
+      if (p.proof === "sameDay") return "Mix, knead, rest 4h at room temp, divide, let it double, prep, and bake.";
+      return "Mix, knead, rest 2h at room temp, divide, chill 24h, let it double, prep, and bake.";
     }
+    if (mode === "sourdough") return "Mix, knead, rest 4h at room temp, put into a basket, prep, and bake.";
+    return "Mix, knead, rest 1-2h at room temp, put into a basket for a short time, prep, and bake.";
+  }
 
-    function grams(value) {
-      const rounded = Math.round(value);
-      return `${rounded.toLocaleString()} g`;
-    }
-
-    function gramLabel(value) {
-      return `${Number(value.toFixed(0)).toLocaleString()} g`;
-    }
-
-    function pct(value) {
-      return `${Number(value.toFixed(1)).toLocaleString()}%`;
-    }
-
-    function presetLabel(value) {
-      return `${Number(value.toFixed(1)).toLocaleString()}%`;
-    }
-
-    function precisePctLabel(value) {
-      return `${Number(value.toFixed(2)).toLocaleString()}%`;
-    }
-
-    function focusInput(input) {
-      input.focus();
-      input.select();
-    }
-
-    function calculateSourdough({ flour, hydration, starterPct }) {
-      const starter = flour * starterPct / 100;
-      const starterFlour = starter / 2;
-      const starterWater = starter / 2;
-      const totalFlour = flour + starterFlour;
-      const requiredWater = Math.max(0, totalFlour * hydration / 100 - starterWater);
-      const salt = totalFlour * 0.02;
-      const totalDough = flour + starter + requiredWater + salt;
-
+  /* ---- original saved state (pizza hydration and yeast are not remembered, as before) ---- */
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const sp = saved && saved.pizza;
       return {
-        totalDough,
-        water: requiredWater,
-        starter,
-        salt,
-        finalHydration: (requiredWater + starterWater) / totalFlour * 100
-      };
-    }
-
-    function calculateInstant({ flour, hydration }) {
-      const water = flour * hydration / 100;
-      const salt = flour * 0.02;
-      const yeast = flour * 0.007;
-      const totalDough = flour + water + salt + yeast;
-
-      return {
-        totalDough,
-        water,
-        yeast,
-        salt,
-        finalHydration: hydration
-      };
-    }
-
-    function calculatePizzaInstant({ balls, hydration, yeastPct }) {
-      const targetDough = balls * PIZZA_BALL_WEIGHT;
-      const hydrationRate = hydration / 100;
-      const yeastRate = yeastPct / 100;
-      const saltRate = PIZZA_SALT_PCT / 100;
-      const flour = targetDough / (1 + hydrationRate + saltRate + yeastRate);
-      const water = flour * hydrationRate;
-      const yeast = flour * yeastRate;
-      const salt = flour * saltRate;
-
-      return { totalDough: targetDough, flour, water, yeast, salt, finalHydration: hydration };
-    }
-
-    function calculatePizzaSourdough({ balls, hydration, starterPct }) {
-      const targetDough = balls * PIZZA_BALL_WEIGHT;
-      const hydrationRate = hydration / 100;
-      const starterRate = starterPct / 100;
-      const saltRate = PIZZA_SALT_PCT / 100;
-      const totalFlour = targetDough / (1 + hydrationRate + saltRate);
-      const starter = totalFlour * starterRate;
-      const starterWater = starter / 2;
-      const starterFlour = starter / 2;
-      const flour = totalFlour - starterFlour;
-      const water = Math.max(0, totalFlour * hydrationRate - starterWater);
-      const salt = totalFlour * saltRate;
-
-      return {
-        totalDough: targetDough,
-        flour,
-        water,
-        starter,
-        salt,
-        finalHydration: (water + starterWater) / totalFlour * 100
-      };
-    }
-
-    function calculatePizza(pizza) {
-      if (pizza.yeastType === "sourdough") {
-        return calculatePizzaSourdough({
-          balls: pizza.balls,
-          hydration: pizza.hydration,
-          starterPct: PIZZA_STARTER_PCT[pizza.proof]
-        });
-      }
-
-      return calculatePizzaInstant({
-        balls: pizza.balls,
-        hydration: pizza.hydration,
-        yeastPct: pizza.instantYeastPct[pizza.proof]
-      });
-    }
-
-    function pizzaManualText(pizza) {
-      if (pizza.yeastType === "instant" && pizza.proof === "sameDay") {
-        return "🍯 Mix, knead, rest 4h at room temp, divide, let it double, prep, and bake.";
-      }
-      if (pizza.yeastType === "instant" && pizza.proof === "nextDay") {
-        return "🌙 Mix, knead, chill 24h, rest 2h at room temp, divide, let it double, prep, and bake.";
-      }
-      if (pizza.yeastType === "sourdough" && pizza.proof === "sameDay") {
-        return "🌿 Mix, knead, rest 4h at room temp, divide, let it double, prep, and bake.";
-      }
-      return "✨ Mix, knead, rest 2h at room temp, divide, chill 24h, let it double, prep, and bake.";
-    }
-
-    function bakeManualText(mode, pizza) {
-      if (mode === "pizza") return pizzaManualText(pizza);
-      if (mode === "sourdough") {
-        return "🌿 Mix, knead, rest 4h at room temp, put into a basket, prep, and bake.";
-      }
-      return "🍞 Mix, knead, rest 1-2h at room temp, put into a basket for a short time, prep, and bake.";
-    }
-
-    function loadState() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        return {
-          ...DEFAULTS,
-          ...saved,
-          sourdough: { ...DEFAULTS.sourdough, ...(saved && saved.sourdough) },
-          instant: { ...DEFAULTS.instant, ...(saved && saved.instant) },
-          pizza: {
-            ...DEFAULTS.pizza,
-            balls: saved && saved.pizza && saved.pizza.balls ? saved.pizza.balls : DEFAULTS.pizza.balls,
-            yeastType: saved && saved.pizza && saved.pizza.yeastType ? saved.pizza.yeastType : DEFAULTS.pizza.yeastType,
-            proof: saved && saved.pizza && saved.pizza.proof ? saved.pizza.proof : DEFAULTS.pizza.proof,
-            hydration: DEFAULTS.pizza.hydration,
-            instantYeastPct: { ...DEFAULTS.pizza.instantYeastPct }
-          }
-        };
-      } catch {
-        return structuredClone(DEFAULTS);
-      }
-    }
-
-    function saveState() {
-      const savedState = {
-        ...state,
+        ...DEFAULTS, ...saved,
+        sourdough: { ...DEFAULTS.sourdough, ...(saved && saved.sourdough) },
+        instant: { ...DEFAULTS.instant, ...(saved && saved.instant) },
         pizza: {
-          ...state.pizza,
+          ...DEFAULTS.pizza,
+          balls: sp && sp.balls ? sp.balls : DEFAULTS.pizza.balls,
+          yeastType: sp && sp.yeastType ? sp.yeastType : DEFAULTS.pizza.yeastType,
+          proof: sp && sp.proof ? sp.proof : DEFAULTS.pizza.proof,
           hydration: DEFAULTS.pizza.hydration,
           instantYeastPct: { ...DEFAULTS.pizza.instantYeastPct }
         }
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
-    }
+    } catch { return structuredClone(DEFAULTS); }
+  }
+  let state = loadState();
+  if (!["sourdough", "instant", "pizza"].includes(state.mode)) state.mode = "sourdough";
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, pizza: { ...state.pizza, hydration: DEFAULTS.pizza.hydration, instantYeastPct: { ...DEFAULTS.pizza.instantYeastPct } } }));
+    } catch {}
+  }
 
-    function currentValues() {
-      const current = state[state.mode];
-      return {
-        flour: clampNumber(el.flour.value, 1, 10000, current.flour),
-        hydration: clampNumber(el.hydration.value, 40, 100, current.hydration),
-        starterPct: clampNumber(el.starterPct.value, 0, 100, state.sourdough.starterPct)
-      };
-    }
+  /* ---- field specs: what the UI may edit, with limits and presets ---- */
+  const SPEC = {
+    flour:          { label: "Flour",        unit: "g", min: 1,    max: 10000, step: 1,    drag: 10,   dec: 0, presets: [800, 1200] },
+    hydration:      { label: "Hydration",    unit: "%", min: 40,   max: 100,   step: 1,    drag: 1,    dec: 0, presets: [65, 70] },
+    starterPct:     { label: "Starter",      unit: "%", min: 0,    max: 100,   step: 0.5,  drag: 0.5,  dec: 1, presets: [5, 10] },
+    balls:          { label: "Dough balls",  unit: "",  min: 1,    max: 48,    step: 1,    drag: 1,    dec: 0, presets: [4, 8, 12] },
+    pizzaHydration: { label: "Hydration",    unit: "%", min: 50,   max: 80,    step: 1,    drag: 1,    dec: 0, presets: [60, 64, 70] },
+    yeastPct:       { label: "Yeast",        unit: "%", min: 0.01, max: 2,     step: 0.01, drag: 0.01, dec: 2, presets: [] }
+  };
+  const CHOICES = {
+    yeastType: { label: "Leavening", options: [["instant", "Instant yeast"], ["sourdough", "Sourdough"]] },
+    proof:     { label: "Proofing",  options: [["sameDay", "Same day"], ["nextDay", "Next day"]] }
+  };
+  const MODES = [["sourdough", "Sourdough"], ["instant", "Instant yeast"], ["pizza", "Pizza"]];
+  const MODE_TITLE = { sourdough: "Sourdough bread", instant: "Instant yeast bread", pizza: "Neapolitan pizza" };
 
-    function currentPizza() {
-      return {
-        ...state.pizza,
-        balls: clampNumber(state.pizza.balls, 1, 48, DEFAULTS.pizza.balls),
-        hydration: clampNumber(state.pizza.hydration, 50, 80, DEFAULTS.pizza.hydration),
-        yeastType: state.pizza.yeastType === "sourdough" ? "sourdough" : "instant",
-        proof: state.pizza.proof === "sameDay" ? "sameDay" : "nextDay",
-        instantYeastPct: {
-          sameDay: clampNumber(state.pizza.instantYeastPct.sameDay, 0.01, 2, DEFAULTS.pizza.instantYeastPct.sameDay),
-          nextDay: clampNumber(state.pizza.instantYeastPct.nextDay, 0.01, 2, DEFAULTS.pizza.instantYeastPct.nextDay)
-        }
-      };
-    }
-
-    function commitInputs() {
-      const values = currentValues();
-      if (state.mode === "sourdough") {
-        state.sourdough = values;
-      } else if (state.mode === "instant") {
-        state.instant = { flour: values.flour, hydration: values.hydration };
-      }
-      saveState();
-      render();
-    }
-
-    function setMode(mode) {
-      const previous = currentValues();
-      if (state.mode === "sourdough") {
-        state.sourdough = previous;
-      } else if (state.mode === "instant") {
-        state.instant = { flour: previous.flour, hydration: previous.hydration };
-      }
-      state.mode = mode;
-      saveState();
-      syncInputsFromState();
-      render();
-    }
-
-    function setPizzaOption(key, value) {
-      state.pizza = currentPizza();
-      state.pizza[key] = value;
-      saveState();
-      render();
-    }
-
-    function stepPizzaControl(control, step) {
-      const pizza = currentPizza();
-      if (control === "balls") {
-        pizza.balls = clampNumber(pizza.balls + step, 1, 48, DEFAULTS.pizza.balls);
-      }
-      if (control === "hydration") {
-        pizza.hydration = clampNumber(pizza.hydration + step, 50, 80, DEFAULTS.pizza.hydration);
-      }
-      if (control === "yeastPct") {
-        const proof = pizza.proof;
-        pizza.instantYeastPct[proof] = clampNumber(pizza.instantYeastPct[proof] + step, 0.01, 2, DEFAULTS.pizza.instantYeastPct[proof]);
-        pizza.instantYeastPct[proof] = Math.round(pizza.instantYeastPct[proof] * 100) / 100;
-      }
-      state.pizza = pizza;
-      saveState();
-      render();
-    }
-
-    function syncInputsFromState() {
-      if (state.mode === "pizza") return;
-      const current = state[state.mode];
-      el.flour.value = current.flour;
-      el.hydration.value = current.hydration;
-      el.starterPct.value = state.sourdough.starterPct;
-    }
-
-    function render() {
-      const pizzaMode = state.mode === "pizza";
-      const values = pizzaMode ? null : currentValues();
-      const pizza = currentPizza();
-      const sourdough = state.mode === "sourdough";
-      const instant = state.mode === "instant";
-      const pizzaInstant = pizzaMode && pizza.yeastType === "instant";
-      const pizzaSourdough = pizzaMode && pizza.yeastType === "sourdough";
-      const result = pizzaMode ? calculatePizza(pizza) : sourdough ? calculateSourdough(values) : calculateInstant(values);
-
-      el.tabs.forEach(tab => {
-        tab.setAttribute("aria-selected", String(tab.dataset.mode === state.mode));
-      });
-
-      el.modeBlocks.forEach(block => {
-        const targets = block.dataset.visibleFor.split(" ");
-        block.hidden = !targets.includes(state.mode);
-      });
-
-      document.querySelectorAll("[data-visible-for='pizza-instant']").forEach(block => {
-        block.hidden = !pizzaInstant;
-      });
-
-      if (!pizzaMode) {
-        el.flourChips.forEach(chip => {
-          chip.setAttribute("aria-pressed", String(Number(chip.dataset.flour) === values.flour));
-        });
-
-        const flourPresets = el.flourChips.map(chip => Number(chip.dataset.flour));
-        const flourIsPreset = flourPresets.includes(values.flour);
-        el.flourCustom.textContent = flourIsPreset ? "Custom" : gramLabel(values.flour);
-        el.flourCustom.setAttribute("aria-pressed", String(!flourIsPreset));
-
-        el.hydrationChips.forEach(chip => {
-          chip.setAttribute("aria-pressed", String(Number(chip.dataset.hydration) === values.hydration));
-        });
-
-        const hydrationIsPreset = [65, 70].includes(values.hydration);
-        el.hydrationCustom.textContent = hydrationIsPreset ? "Custom" : presetLabel(values.hydration);
-        el.hydrationCustom.setAttribute("aria-pressed", String(!hydrationIsPreset));
-
-        el.starterChips.forEach(chip => {
-          chip.setAttribute("aria-pressed", String(Number(chip.dataset.starterPct) === values.starterPct));
-        });
-
-        const starterIsPreset = [5, 10].includes(values.starterPct);
-        el.starterCustom.textContent = starterIsPreset ? "Custom" : presetLabel(values.starterPct);
-        el.starterCustom.setAttribute("aria-pressed", String(!starterIsPreset));
-      }
-
-      el.pizzaBalls.textContent = pizza.balls;
-      el.pizzaHydration.textContent = presetLabel(pizza.hydration);
-      el.pizzaYeastPct.textContent = precisePctLabel(pizza.instantYeastPct[pizza.proof]);
-      el.pizzaManual.textContent = bakeManualText(state.mode, pizza);
-      el.pizzaYeastTypeChips.forEach(chip => {
-        chip.setAttribute("aria-pressed", String(chip.dataset.pizzaYeastType === pizza.yeastType));
-      });
-      el.pizzaProofChips.forEach(chip => {
-        chip.setAttribute("aria-pressed", String(chip.dataset.pizzaProof === pizza.proof));
-      });
-
-      el.modeTitle.textContent = pizzaMode ? "Neapolitan pizza" : sourdough ? "Sourdough bread" : "Instant yeast bread";
-      el.totalDough.textContent = grams(result.totalDough);
-      el.pizzaFlour.textContent = grams(result.flour || 0);
-      el.water.textContent = grams(result.water);
-      el.salt.textContent = grams(result.salt);
-      el.finalHydration.textContent = pct(result.finalHydration);
-      el.starterLabel.textContent = pizzaMode ? "Sourdough starter" : "Necessary starter";
-      el.yeastLabel.textContent = pizzaMode ? "Instant dry yeast" : "Instant yeast";
-
-      if (sourdough || pizzaSourdough) {
-        el.starter.textContent = grams(result.starter);
-      }
-      if (instant || pizzaInstant) {
-        el.yeast.textContent = grams(result.yeast);
-      }
-
-      el.starter.parentElement.hidden = !(sourdough || pizzaSourdough);
-      el.yeast.parentElement.hidden = !(instant || pizzaInstant);
-    }
-
-    el.tabs.forEach(tab => {
-      tab.addEventListener("click", () => setMode(tab.dataset.mode));
-    });
-
-    el.flourChips.forEach(chip => {
-      chip.addEventListener("click", () => {
-        el.flour.value = chip.dataset.flour;
-        commitInputs();
-      });
-    });
-
-    el.flourCustom.addEventListener("click", () => focusInput(el.flour));
-
-    el.hydrationChips.forEach(chip => {
-      chip.addEventListener("click", () => {
-        el.hydration.value = chip.dataset.hydration;
-        commitInputs();
-      });
-    });
-
-    el.hydrationCustom.addEventListener("click", () => focusInput(el.hydration));
-
-    el.starterChips.forEach(chip => {
-      chip.addEventListener("click", () => {
-        el.starterPct.value = chip.dataset.starterPct;
-        commitInputs();
-      });
-    });
-
-    el.starterCustom.addEventListener("click", () => focusInput(el.starterPct));
-
-    el.pizzaYeastTypeChips.forEach(chip => {
-      chip.addEventListener("click", () => setPizzaOption("yeastType", chip.dataset.pizzaYeastType));
-    });
-
-    el.pizzaProofChips.forEach(chip => {
-      chip.addEventListener("click", () => setPizzaOption("proof", chip.dataset.pizzaProof));
-    });
-
-    el.pizzaStepButtons.forEach(button => {
-      button.addEventListener("click", () => {
-        stepPizzaControl(button.dataset.pizzaStep, Number(button.dataset.step));
-      });
-    });
-
-    [el.flour, el.hydration, el.starterPct].forEach(input => {
-      input.addEventListener("input", commitInputs);
-      input.addEventListener("change", commitInputs);
-    });
-
-    window.DoughRatioAssistant = {
-      calculateSourdough,
-      calculateInstant,
-      calculatePizzaInstant,
-      calculatePizzaSourdough,
-      calculatePizza
+  function breadValues() {
+    const cur = state[state.mode];
+    return {
+      flour: clampNumber(cur.flour, 1, 10000, 500),
+      hydration: clampNumber(cur.hydration, 40, 100, 70),
+      starterPct: clampNumber(state.sourdough.starterPct, 0, 100, 5)
     };
+  }
+  function pizzaValues() {
+    const p = state.pizza;
+    return {
+      balls: clampNumber(p.balls, 1, 48, 8),
+      hydration: clampNumber(p.hydration, 50, 80, 64),
+      yeastType: p.yeastType === "sourdough" ? "sourdough" : "instant",
+      proof: p.proof === "sameDay" ? "sameDay" : "nextDay",
+      instantYeastPct: {
+        sameDay: clampNumber(p.instantYeastPct.sameDay, 0.01, 2, 0.5),
+        nextDay: clampNumber(p.instantYeastPct.nextDay, 0.01, 2, 0.11)
+      }
+    };
+  }
 
-    syncInputsFromState();
-    render();
-  </script>
+  function fieldKeys() {
+    if (state.mode === "pizza") return ["balls", "pizzaHydration"].concat(pizzaValues().yeastType === "instant" ? ["yeastPct"] : []);
+    return state.mode === "sourdough" ? ["flour", "hydration", "starterPct"] : ["flour", "hydration"];
+  }
+  function valueOf(key) {
+    if (state.mode === "pizza") {
+      const p = pizzaValues();
+      return { balls: p.balls, pizzaHydration: p.hydration, yeastPct: p.instantYeastPct[p.proof] }[key];
+    }
+    return breadValues()[key];
+  }
+
+  /* ---- plan as a timeline. Only the rests named in the original text have hours; the rest are untimed steps ---- */
+  function timeline(mode, p) {
+    const T = (label, hours, text, fridge) => ({ label, hours: hours || null, text: text || (hours ? hours + " h" : ""), fridge: !!fridge });
+    if (mode === "sourdough") return [T("Mix"), T("Rest", 4), T("Basket"), T("Bake")];
+    if (mode === "instant") return [T("Mix"), T("Rest", 1.5, "1-2 h"), T("Basket"), T("Bake")];
+    const sd = p.yeastType === "sourdough", next = p.proof === "nextDay";
+    if (!next) return [T("Mix"), T("Rest", 4), T("Divide"), T("Double"), T("Bake")];
+    if (!sd) return [T("Mix"), T("Chill", 24, "24 h", true), T("Rest", 2), T("Divide"), T("Double"), T("Bake")];
+    return [T("Mix"), T("Rest", 2), T("Divide"), T("Chill", 24, "24 h", true), T("Double"), T("Bake")];
+  }
+
+  function model() {
+    const mode = state.mode, pizza = mode === "pizza";
+    const p = pizza ? pizzaValues() : null, v = pizza ? null : breadValues();
+    const r = pizza ? calculatePizza(p) : mode === "sourdough" ? calculateSourdough(v) : calculateInstant(v);
+    const hasStarter = pizza ? p.yeastType === "sourdough" : mode === "sourdough";
+    const hasYeast = pizza ? p.yeastType === "instant" : mode === "instant";
+    const parts = [{ id: "flour", label: "Flour", g: pizza ? r.flour : v.flour }, { id: "water", label: "Water", g: r.water }];
+    if (hasStarter) parts.push({ id: "starter", label: "Starter", g: r.starter });
+    if (hasYeast) parts.push({ id: "yeast", label: "Yeast", g: r.yeast });
+    parts.push({ id: "salt", label: "Salt", g: r.salt });
+    return {
+      mode, title: MODE_TITLE[mode], pizza: p, total: r.totalDough, finalHydration: r.finalHydration, parts,
+      fields: fieldKeys().map(k => ({ key: k, ...SPEC[k], value: valueOf(k) })),
+      choices: pizza ? Object.entries(CHOICES).map(([k, c]) => ({ key: k, ...c, value: p[k] })) : [],
+      plan: bakeManualText(mode, p),
+      timeline: timeline(mode, p),
+      pieces: pizza ? p.balls : null
+    };
+  }
+
+  const subs = new Set();
+  const emit = () => { saveState(); const m = model(); subs.forEach(fn => fn(m)); };
+
+  function set(key, raw) {
+    const sp = SPEC[key];
+    let val = clampNumber(raw, sp.min, sp.max, valueOf(key));
+    val = Math.round(val * 10 ** sp.dec) / 10 ** sp.dec;
+    if (key === "balls") state.pizza.balls = val;
+    else if (key === "pizzaHydration") state.pizza.hydration = val;
+    else if (key === "yeastPct") { const p = pizzaValues(); state.pizza = { ...state.pizza, instantYeastPct: { ...p.instantYeastPct, [p.proof]: val } }; }
+    else if (key === "starterPct") state.sourdough.starterPct = val;
+    else state[state.mode][key] = val;
+    emit();
+  }
+  function choose(key, val) {
+    if (key === "mode") state.mode = val;
+    else { state.pizza = { ...pizzaValues(), instantYeastPct: { ...pizzaValues().instantYeastPct } }; state.pizza[key] = val; }
+    emit();
+  }
+
+  /* ---- formatting ---- */
+  const fmtG = g => (g < 10 ? String(Math.round(g * 10) / 10) : Math.round(g).toLocaleString()) + " g";
+  const fmtNum = (v, dec) => String(Number(v.toFixed(dec)));
+  const fmtVal = f => fmtNum(f.value, f.dec) + (f.unit ? (f.unit === "g" ? " g" : f.unit) : "");
+
+  /* ---- drag helper: pointer drags change a field in whole steps; a short press is a tap ---- */
+  const haptic = () => { try { navigator.vibrate && navigator.vibrate(6); } catch {} };
+  function drag(el, { key, axis = "x", pxPerStep = 10, onTap, onStart, onEnd, target }) {
+    let start = null;
+    el.style.touchAction = axis === "x" ? "pan-y" : "pan-x";
+    el.addEventListener("pointerdown", e => {
+      if (e.button) return;
+      const k = typeof key === "function" ? key(e) : key;
+      start = { id: e.pointerId, x: e.clientX, y: e.clientY, k, v: k ? valueOf(k) : 0, last: 0, moved: false };
+      try { el.setPointerCapture(e.pointerId); } catch {}
+      onStart && onStart(k, e);
+    });
+    el.addEventListener("pointermove", e => {
+      if (!start || e.pointerId !== start.id || !start.k) return;
+      const d = axis === "x" ? e.clientX - start.x : start.y - e.clientY;
+      if (!start.moved && Math.abs(d) < 5) return;
+      start.moved = true;
+      const steps = Math.round(d / pxPerStep(start.k));
+      if (steps !== start.last) { start.last = steps; set(start.k, start.v + steps * SPEC[start.k].drag); haptic(); }
+    });
+    const end = e => {
+      if (!start || e.pointerId !== start.id) return;
+      const s = start; start = null;
+      if (!s.moved && e.type === "pointerup") onTap && onTap(s.k, e);
+      onEnd && onEnd(s.k, s.moved);
+    };
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+  }
+
+  const step = (key, dir) => set(key, valueOf(key) + dir * SPEC[key].step);
+  return { model, set, choose, step, spec: SPEC, modes: MODES, drag, fmtG, fmtNum, fmtVal, subscribe: fn => { subs.add(fn); fn(model()); },
+           api: { calculateSourdough, calculateInstant, calculatePizza } };
+})();
+window.DoughRatioAssistant = Dough.api;
+
+</script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const S = (tag, attrs = {}, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  const H = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k] === true ? "" : attrs[k]); } kids.forEach(c => { if (c != null) e.append(c); }); return e; };
+  const haptic = () => { try { navigator.vibrate && navigator.vibrate(8); } catch {} };
+
+  const RAIL = { flour: { min: 100, max: 5000, log: true, snap: 5 }, hydration: { min: 40, max: 100 }, starterPct: { min: 0, max: 30 }, balls: { min: 1, max: 24 }, pizzaHydration: { min: 50, max: 80 }, yeastPct: { min: 0.01, max: 1 } };
+  const toT = (k, v) => { const r = RAIL[k]; const t = r.log ? Math.log(v / r.min) / Math.log(r.max / r.min) : (v - r.min) / (r.max - r.min); return Math.min(1, Math.max(0, t)); };
+  const toV = (k, t) => { const r = RAIL[k]; let v = r.log ? r.min * Math.pow(r.max / r.min, t) : r.min + (r.max - r.min) * t; if (r.snap) v = Math.round(v / r.snap) * r.snap; return v; };
+  const PART_OF = { flour: "flour", balls: "flour", hydration: "water", pizzaHydration: "water", starterPct: "starter", yeastPct: "yeast" };
+
+  let m = null, active = null, typing = false;
+  const field = k => m.fields.find(f => f.key === k);
+
+  /* ribbon: the day, drawn to scale (square-root so a 24 h chill does not erase the rest) */
+  function drawRibbon() {
+    const svg = $("#ribbon"); svg.replaceChildren();
+    const steps = m.timeline, GAP = 3, W = 351 - GAP * (steps.length - 1);
+    const w = steps.map(s => s.hours ? Math.sqrt(s.hours) * 1.5 : 0.8), sum = w.reduce((a, b) => a + b, 0);
+    let x = 0;
+    steps.forEach((s, i) => {
+      const bw = w[i] / sum * W, last = i === steps.length - 1;
+      const fill = last ? "var(--bake)" : s.fridge ? "var(--fridge)" : "var(--tint)";
+      svg.append(S("rect", { x: x.toFixed(1), y: 6, width: bw.toFixed(1), height: 56, rx: 10, fill }));
+      const inv = last || s.fridge ? "inv" : "";
+      const label = bw < 30 ? s.label.charAt(0) : bw < 50 ? s.label.slice(0, 3) : s.label;
+      svg.append(S("text", { x: (x + 8).toFixed(1), y: 28, class: "nm " + inv }, label));
+      if (s.text && bw > 36) svg.append(S("text", { x: (x + 8).toFixed(1), y: 46, class: "hr " + inv }, s.text));
+      x += bw + GAP;
+    });
+    svg.append(S("text", { x: 0, y: 80, class: "hr" }, m.mode === "pizza" ? "Mix to bake. Only the rests the method names are timed." : "Mix to bake. Only the rest the method names is timed."));
+    svg.setAttribute("aria-label", "The day: " + steps.map(s => s.label + (s.text ? " " + s.text : "")).join(", "));
+  }
+
+  /* tiles: fridge and leavening are placed on the day, or simply tapped */
+  function drawTray() {
+    const tr = $("#tray"); tr.hidden = m.mode !== "pizza"; tr.replaceChildren();
+    if (m.mode !== "pizza") return;
+    const next = m.pizza.proof === "nextDay", sd = m.pizza.yeastType === "sourdough";
+    const fridge = H("button", { type: "button", class: "tile", "aria-pressed": String(next) }, H("b", { text: "Fridge" }), H("small", { text: next ? "on the day, 24 h" : "drag onto the day" }));
+    const leaven = H("button", { type: "button", class: "tile", "aria-pressed": "true" }, H("b", { text: sd ? "Sourdough starter" : "Instant yeast" }), H("small", { text: "tap or drag to swap" }));
+    tile(fridge, () => Dough.choose("proof", next ? "sameDay" : "nextDay"), onRibbon => { if (onRibbon) Dough.choose("proof", "nextDay"); else Dough.choose("proof", "sameDay"); });
+    tile(leaven, () => Dough.choose("yeastType", sd ? "instant" : "sourdough"), onRibbon => { if (onRibbon) Dough.choose("yeastType", sd ? "instant" : "sourdough"); });
+    tr.append(fridge, leaven);
+  }
+  function tile(el, onTap, onDrop) {
+    let st = null;
+    el.addEventListener("pointerdown", e => { st = { x: e.clientX, y: e.clientY, moved: false }; try { el.setPointerCapture(e.pointerId); } catch {} });
+    el.addEventListener("pointermove", e => {
+      if (!st) return; const dx = e.clientX - st.x, dy = e.clientY - st.y;
+      if (!st.moved && Math.hypot(dx, dy) > 12) { st.moved = true; el.classList.add("drag"); }
+      if (st.moved) { el.style.transform = `translate(${dx}px, ${dy}px)`; const t = hit(e, el); $("#ribbon").classList.toggle("over", t); }
+    });
+    const end = e => {
+      if (!st) return; const s = st; st = null;
+      $("#ribbon").classList.remove("over");
+      if (!s.moved) { if (e.type === "pointerup") onTap(); return; }
+      const on = hit(e, el); el.classList.remove("drag"); el.style.transform = "";
+      if (e.type === "pointerup") onDrop(on);
+    };
+    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+    el.addEventListener("click", e => { if (e.detail === 0) onTap(); });
+  }
+  function hit(e, el) { el.style.pointerEvents = "none"; const t = document.elementFromPoint(e.clientX, e.clientY); el.style.pointerEvents = ""; return !!(t && t.closest && t.closest("#ribbon")); }
+
+  /* the weighed stack, one value on the slider at a time */
+  function drawWork() {
+    if (!field(active)) active = m.fields[0].key;
+    const f = field(active);
+    const a = $("#active"); a.replaceChildren();
+    if (typing) {
+      const input = H("input", { type: "text", inputmode: "decimal", "aria-label": f.label, value: Dough.fmtNum(f.value, f.dec) });
+      a.append(H("span", { class: "l", text: f.label }), H("span", {}, input, H("span", { class: "u", text: f.unit })));
+      input.focus(); input.select();
+      const done = () => { typing = false; const v = parseFloat(input.value.replace(",", ".")); if (Number.isFinite(v)) Dough.set(active, v); else draw(); };
+      input.addEventListener("blur", done); input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = ""; input.blur(); } });
+    } else {
+      a.append(H("span", { class: "l", text: f.key === "balls" ? "Dough balls" : f.label }),
+        H("span", {}, H("button", { type: "button", "aria-label": `${f.label} ${Dough.fmtNum(f.value, f.dec)}. Tap to type.`, text: Dough.fmtNum(f.value, f.dec), onclick: () => { typing = true; drawWork(); } }), H("span", { class: "u", text: f.unit })));
+    }
+    const sel = PART_OF[active];
+    $("#stack").replaceChildren(...m.parts.map(p => {
+      const li = H("li", { class: p.id === sel ? "on" : "" }, H("span", { text: p.label === "Yeast" ? "Instant yeast" : p.label }), H("span", { class: "a", text: Dough.fmtG(p.g) }));
+      li.style.setProperty("--w", (p.g / m.total * 100).toFixed(1) + "%"); return li;
+    }));
+    $("#stack").append(H("li", { class: "tot" }, H("span", { text: "Total dough" }), H("span", { class: "a", text: Dough.fmtG(m.total) })));
+    $("#chips").replaceChildren(...m.fields.map(x => H("button", { type: "button", class: "chip", "aria-pressed": String(x.key === active), onclick: () => { active = x.key; typing = false; draw(); } },
+      H("small", { text: x.key === "balls" ? "Balls" : x.label }), H("b", { text: Dough.fmtVal(x) }))));
+
+    // rail: position, preset detents with labels, aria
+    const rail = $("#rail");
+    rail.style.setProperty("--t", toT(active, f.value).toFixed(4));
+    rail.setAttribute("aria-label", f.label); rail.setAttribute("aria-valuenow", f.value); rail.setAttribute("aria-valuemin", RAIL[active].min); rail.setAttribute("aria-valuemax", RAIL[active].max);
+    rail.querySelectorAll(".tick").forEach(t => t.remove());
+    f.presets.forEach(p => {
+      const t = H("button", { type: "button", class: "tick" + (p === f.value ? " hit" : ""), text: String(p), "aria-label": `Set ${f.label} to ${p}`, onpointerdown: e => e.stopPropagation(), onclick: () => Dough.set(active, p) });
+      t.style.top = `calc((1 - ${toT(active, p).toFixed(4)}) * (100% - 28px) + 14px)`;
+      rail.append(t);
+    });
+  }
+
+  let lastSnap = null, dragging = false;
+  function applyRail(e) {
+    const f = field(active), trk = $("#rail .trk").getBoundingClientRect();
+    const t = Math.min(1, Math.max(0, 1 - (e.clientY - trk.top - 0) / trk.height));
+    let v = toV(active, t);
+    const snapP = f.presets.find(p => Math.abs(toT(active, p) - t) < 0.035);
+    if (snapP !== undefined) { v = snapP; if (lastSnap !== snapP) haptic(); lastSnap = snapP; } else lastSnap = null;
+    Dough.set(active, v);
+  }
+  const rail = $("#rail");
+  rail.addEventListener("pointerdown", e => { if (e.button) return; dragging = true; try { rail.setPointerCapture(e.pointerId); } catch {} applyRail(e); });
+  rail.addEventListener("pointermove", e => { if (dragging) applyRail(e); });
+  ["pointerup", "pointercancel"].forEach(ev => rail.addEventListener(ev, () => { dragging = false; lastSnap = null; }));
+  rail.addEventListener("keydown", e => {
+    const d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+    if (d) { e.preventDefault(); Dough.step(active, d); return; }
+    if (e.key === "PageUp" || e.key === "PageDown") { e.preventDefault(); const f = field(active), ps = f.presets.slice().sort((a, b) => a - b); const up = e.key === "PageUp"; const n = up ? ps.find(p => p > f.value) : ps.reverse().find(p => p < f.value); if (n !== undefined) Dough.set(active, n); }
+  });
+
+  function draw() {
+    $("#tabs").replaceChildren(...Dough.modes.map(([v, l]) => H("button", { type: "button", role: "tab", text: l, "aria-selected": String(m.mode === v), onclick: () => { active = null; typing = false; Dough.choose("mode", v); } })));
+    drawRibbon(); drawTray(); drawWork();
+    $("#plan").textContent = m.plan;
+  }
+  Dough.subscribe(model => { m = model; if (!typing || !field(active)) draw(); else { drawRibbon(); drawTray(); $("#plan").textContent = m.plan; } });
+})();
+</script>
 </body>
 </html>

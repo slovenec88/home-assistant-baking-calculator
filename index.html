@@ -68,6 +68,9 @@
   #dname { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; } #dgo { border-radius: 0; background: var(--ink); color: var(--bg); }
   #dlist li { border-width: 0 0 1px; border-color: var(--hair); border-radius: 0; } #dlist button { border-radius: 0; } #dlist button.load { background: var(--ink); color: var(--bg); } #dnote { border-radius: 0; }
 
+  #tabs { grid-template-columns: repeat(2, 1fr); }
+  #choices .grp:only-child { grid-column: 1 / -1; }
+
 </style>
 </head>
 <body>
@@ -455,8 +458,23 @@ Dough.recipes = (() => {
   let m = null, structKey = "";
   Dough.a11y();
 
+  // Bread and Pizza are the two top tabs. Sourdough or yeast is a choice inside each, so bread has it too, just like pizza.
+  function groupsOf(model) {
+    if (model.mode === "pizza") return model.choices.map(c => ({ ...c, apply: v => Dough.choose(c.key, v) }));
+    return [{ label: "Leavening", options: [["sourdough", "Sourdough"], ["instant", "Yeast"]], value: model.mode, apply: v => switchBread(v) }];
+  }
+  function switchBread(to) {
+    const f0 = Dough.model().fields, flour = f0.find(x => x.key === "flour").value, hyd = f0.find(x => x.key === "hydration").value;
+    Dough.choose("mode", to); Dough.set("flour", flour); Dough.set("hydration", hyd);   // keep your numbers when the leavening changes
+  }
+  function goTop(v) {
+    const cur = Dough.model();
+    if (v === "pizza" && cur.mode !== "pizza") { Dough.choose("yeastType", cur.mode === "sourdough" ? "sourdough" : "instant"); Dough.choose("mode", "pizza"); }
+    if (v === "bread" && cur.mode === "pizza") Dough.choose("mode", cur.pizza.yeastType === "sourdough" ? "sourdough" : "instant");
+  }
   function build(model) {
-    $("#tabs").replaceChildren(...Dough.modes.map(([v, l]) => H("button", { type: "button", role: "tab", text: l === "Instant yeast" ? "Instant" : l, "aria-selected": String(model.mode === v), onclick: () => Dough.choose("mode", v) })));
+    const isPizza = model.mode === "pizza";
+    $("#tabs").replaceChildren(...[["bread", "Bread"], ["pizza", "Pizza"]].map(([v, l]) => H("button", { type: "button", role: "tab", text: l, "aria-selected": String((v === "pizza") === isPizza), onclick: () => goTop(v) })));
     const inputs = $("#inputs"); inputs.replaceChildren();
     model.fields.forEach(f => {
       const num = H("button", { type: "button", class: "num", role: "spinbutton", "aria-label": f.label, "aria-valuenow": f.value, "aria-valuemin": f.min, "aria-valuemax": f.max, "data-key": f.key });
@@ -474,9 +492,10 @@ Dough.recipes = (() => {
         if (e.key === "Enter") { e.preventDefault(); edit(num, f); }
       });
     });
-    const ch = $("#choices"); ch.hidden = !model.choices.length; ch.replaceChildren();
-    model.choices.forEach(c => ch.append(H("div", { class: "grp", role: "group", "aria-label": c.label },
-      ...c.options.map(([v, l]) => H("button", { type: "button", text: l === "Instant yeast" ? "Yeast" : l, "data-v": v, "aria-pressed": String(c.value === v), onclick: () => Dough.choose(c.key, v) })))));
+    const groups = groupsOf(model);
+    const ch = $("#choices"); ch.hidden = !groups.length; ch.replaceChildren();
+    groups.forEach(g => ch.append(H("div", { class: "grp", role: "group", "aria-label": g.label },
+      ...g.options.map(([v, l]) => H("button", { type: "button", text: l === "Instant yeast" ? "Yeast" : l, "data-v": v, "aria-pressed": String(g.value === v), onclick: () => g.apply(v) })))));
   }
 
   function edit(num, f) {
@@ -501,7 +520,7 @@ Dough.recipes = (() => {
       row.querySelector(".ruler").style.backgroundPositionX = `${-(f.value / f.drag) * (PX[f.key] || 10)}px`;
       row.querySelectorAll(".pre button").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.p) === f.value)));
     });
-    model.choices.forEach(c => document.querySelectorAll(`#choices [role=group][aria-label="${c.label}"] button`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === c.value))));
+    groupsOf(model).forEach(g => document.querySelectorAll(`#choices [role=group][aria-label="${g.label}"] button`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === g.value))));
 
     // proportion bar
     const bar = $("#bar");

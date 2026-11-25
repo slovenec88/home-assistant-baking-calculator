@@ -353,6 +353,7 @@
       .fields { gap: 4px; }
       .field { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; row-gap: 0; min-height: 40px; }
       .field > .presets { display: none; }
+      .field:focus-within > .presets { display: flex; grid-column: 1 / -1; justify-content: flex-end; padding-bottom: 6px; }
       .field > .chips { grid-column: 2; justify-content: flex-end; }
       .field:has(> .segmented) { grid-template-columns: auto minmax(0, 1fr); }
       .field > .segmented { justify-self: end; grid-column: 2; }
@@ -714,7 +715,7 @@
         h("div", { class: "stepper" }, minus, h("div", { class: "input-wrap" }, input, h("span", { class: "unit", text: unit })), plus));
 
       if (opts.presets) {
-        const chips = opts.presets.map(p => h("button", { type: "button", class: "chip", text: p + (opts.unit || ""),
+        const chips = opts.presets.map(p => h("button", { type: "button", class: "chip", text: p + (opts.suffix ?? opts.unit ?? ""),
           onclick: () => { s[key] = p; show(); changed(); haptic(); } }));
         const sync = () => chips.forEach((c, i) => c.setAttribute("aria-pressed", String(s[key] === opts.presets[i])));
         refreshers.push(sync); sync();
@@ -751,8 +752,8 @@
             s.proof = v; Object.assign(s, PROOF[v]); planAnchor = "now"; structural();
           }));
       }
-      if (s.scaleBy === "flour") fields.push(makeField("flour", "Flour weight"));
-      else if (s.scaleBy === "pieces") fields.push(makeField("pieces", cap(M.many), { hint: `${fmtW(s.pieceWeight)} each` }));
+      if (s.scaleBy === "flour") fields.push(makeField("flour", "Flour weight", state.units === "g" ? { presets: m === "pizza" ? [1000, 1500, 2000] : [500, 800, 1200], suffix: " g" } : {}));
+      else if (s.scaleBy === "pieces") fields.push(makeField("pieces", cap(M.many), { hint: `${fmtW(s.pieceWeight)} each`, presets: m === "pizza" ? [4, 6, 8, 12] : [1, 2, 3] }));
       else fields.push(makeField("total", "Total dough"));
 
       fields.push(makeField("hydration", "Hydration", { unit: "%", presets: m === "pizza" ? [60, 64, 70] : [65, 70, 75] }));

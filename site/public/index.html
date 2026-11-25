@@ -97,11 +97,30 @@
   body[data-mode="pizza"] #choices button { height: 40px !important; }
   body[data-mode="pizza"] #plan { font-size: 0.75rem !important; }
 
+  main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important; }
+  #toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
+  #toprow #dh { width: auto; height: auto; min-height: 40px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--panel); color: var(--ink); font-size: 0.875rem; font-weight: 600; box-shadow: 0 2px 0 var(--line); touch-action: manipulation; }
+  #toprow #dh .grip { display: none; }
+  #toprow #dh[aria-expanded="true"] { background: var(--ink); color: var(--bg); }
+  body.sheet-open #drawer { border-top: 2px solid var(--line); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12); }
+  #drawer { border-top: 0 !important; }
+  #dbody { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px) !important; padding-top: 14px !important; }
+  .in > div:first-child { display: block !important; }
+  .in .lab { margin-bottom: 4px; }
+  .in .pre { gap: 8px !important; }
+  .pre button { height: 38px !important; min-width: 64px; padding: 0 16px !important; font-size: 0.9375rem !important; }
+  .ruler { height: 24px !important; margin-top: 2px !important; cursor: ew-resize; opacity: 0.7 !important; }
+  .ruler::after { height: 24px !important; }
+  .num { cursor: default; }
+
 </style>
 </head>
 <body>
 <main>
-  <nav id="tabs" role="tablist" aria-label="Dough type"></nav>
+  <div id="toprow">
+    <nav id="tabs" role="tablist" aria-label="Dough type"></nav>
+    <button id="dh" type="button" aria-expanded="false" aria-controls="dbody"><span class="grip" aria-hidden="true"></span><span id="dl">Recipes</span></button>
+  </div>
   <div id="bar" role="img" aria-label="Proportions of the dough"></div>
   <section id="inputs"></section>
   <div id="choices"></div>
@@ -109,7 +128,6 @@
   <p id="plan"></p>
 </main>
 <aside id="drawer" aria-label="Saved recipes">
-  <button id="dh" type="button" aria-expanded="false" aria-controls="dbody"><span class="grip" aria-hidden="true"></span><span id="dl">Recipes</span></button>
   <div id="dbody" hidden>
     <form id="dsave"><input id="dname" type="text" maxlength="40" aria-label="Recipe name" placeholder="Name this recipe" autocomplete="off"><button id="dgo" type="submit">Save</button></form>
     <p id="dnote" hidden>Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.</p>
@@ -510,8 +528,10 @@ Dough.recipes = (() => {
       const px = PX[f.key] || 10, every = Math.ceil(8 / px);
       ruler.style.backgroundImage = `repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px ${px * every}px)`;
       const pre = H("div", { class: "pre" }, ...f.presets.map(p => H("button", { type: "button", "data-p": p, text: p + (f.unit === "g" ? " g" : f.unit), onclick: () => Dough.set(f.key, p) })));
-      inputs.append(H("div", { class: "in", "data-key": f.key }, H("div", {}, H("div", { class: "lab", text: f.label }), pre), num, ruler));
+      const row = H("div", { class: "in", "data-key": f.key }, H("div", {}, H("div", { class: "lab", text: f.label }), pre), num, ruler);
+      inputs.append(row);
       Dough.drag(num, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onTap: () => edit(num, f) });
+      Dough.drag(ruler, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onStart: () => row.classList.add("live"), onEnd: () => row.classList.remove("live") });
       num.addEventListener("keydown", e => {
         const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
         if (dir) { e.preventDefault(); Dough.step(f.key, dir); }
@@ -575,7 +595,7 @@ Dough.recipes = (() => {
   const $ = s => document.querySelector(s), dh = $("#dh"), body = $("#dbody"), vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
   let skip = false, y0 = null, flash = 0, confirmId = null, confirmT = 0;
   function setOpen(o) {
-    body.hidden = !o; dh.setAttribute("aria-expanded", String(o));
+    body.hidden = !o; dh.setAttribute("aria-expanded", String(o)); document.body.classList.toggle("sheet-open", o);
     if (o) { const m = Dough.model(); const f = m.fields[0]; $("#dname").placeholder = m.title + ", " + Dough.fmtVal(f); }
   }
   dh.addEventListener("pointerdown", e => { y0 = e.clientY; try { dh.setPointerCapture(e.pointerId); } catch {} });

@@ -598,7 +598,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.7.0";
+  const VERSION = "1.7.2";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -1009,7 +1009,7 @@ window.BK = (() => {
     d.b.click();
   }, true);
   document.addEventListener("click", e => {   // the browser's own click for the same tap would count twice
-    if (e.isTrusted && e.detail > 0 && handled && performance.now() - handled.t < 700 && e.target.closest && e.target.closest(SEL) === handled.b) { e.stopImmediatePropagation(); e.preventDefault(); }
+    if (e.isTrusted && e.detail > 0 && handled && performance.now() - handled.t < 700 && e.target.closest && (e.target.closest(SEL) === handled.b || !handled.b.isConnected)) { e.stopImmediatePropagation(); e.preventDefault(); }
   }, true);
 })();
 </script>
@@ -1022,7 +1022,9 @@ window.BK = (() => {
   const H = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] != null && attrs[k] !== false) e.setAttribute(k, attrs[k]); } kids.forEach(c => e.append(c)); return e; };
   let mem = [];
   const read = () => { try { const a = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(a) ? a : []; } catch { return mem.slice(); } };
-  let list = read(), open = null, timer = 0;
+  let list = read(), open = null, timer = 0, lockUntil = 0;
+  // the panel is rebuilt when a timer starts or stops, so the button under the finger changes; the same tap must not also press its replacement
+  const act = fn => () => { if (performance.now() < lockUntil) return; fn(); };
   const save = () => { mem = list.slice(); try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {} };
   const p2 = n => String(n).padStart(2, "0");
   const fmt = ms => { let s = Math.max(0, Math.ceil(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); s %= 60; return h ? `${h}:${p2(m)}:${p2(s)}` : `${m}:${p2(s)}`; };
@@ -1034,15 +1036,15 @@ window.BK = (() => {
   function start(kind, step, ms) {
     list = list.filter(t => t.id !== kind + ":" + step);
     list.push({ id: kind + ":" + step, kind, step, end: Date.now() + ms, total: ms, done: false });
-    save(); tick(); panel();
+    lockUntil = performance.now() + 500; save(); tick(); panel();
   }
-  function stop(id) { list = list.filter(t => t.id !== id); save(); tick(); panel(); }
+  function stop(id) { list = list.filter(t => t.id !== id); lockUntil = performance.now() + 500; save(); tick(); panel(); }
 
   function calendar(t) {
-    const z = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""), title = "Bake: " + name(t);
+    const z = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""), title = "Bake: " + name(t) + " " + dur(t.total), begin = t.end - t.total;
     const text = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bake//bake.juringari.com//EN", "BEGIN:VEVENT",
-      "UID:" + t.kind + t.step.replace(/\W/g, "") + t.end + "@bake.juringari.com", "DTSTAMP:" + z(Date.now()), "DTSTART:" + z(t.end), "DTEND:" + z(t.end + 300000),
-      "SUMMARY:" + title, "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + title, "TRIGGER:PT0S", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n") + "\r\n";
+      "UID:" + t.kind + t.step.replace(/\W/g, "") + t.end + "@bake.juringari.com", "DTSTAMP:" + z(Date.now()), "DTSTART:" + z(begin), "DTEND:" + z(t.end),
+      "SUMMARY:" + title, "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + title + " - " + tr("Done"), "TRIGGER;VALUE=DATE-TIME:" + z(t.end), "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n") + "\r\n";
     const url = URL.createObjectURL(new Blob([text], { type: "text/calendar" })), a = document.createElement("a");
     a.href = url; a.download = "bake-" + t.kind + "-" + t.step.toLowerCase() + ".ics"; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
@@ -1064,9 +1066,9 @@ window.BK = (() => {
     const id = kind + ":" + open.step, t = find(id), now = Date.now();
     const left = H("span", { class: "left", "data-left": id, text: t ? (t.done ? tr("Done") : fmt(t.end - now)) : dur(ms) });
     const acts = H("div", { class: "acts" });
-    if (!t) acts.append(H("button", { type: "button", class: "go", text: tr("Start timer"), onclick: () => start(kind, open.step, ms) }));
-    else if (t.done) acts.append(H("button", { type: "button", class: "go", text: tr("Restart"), onclick: () => start(kind, open.step, ms) }));
-    else acts.append(H("button", { type: "button", text: tr("Add to calendar"), onclick: () => calendar(t) }), H("button", { type: "button", text: tr("Stop"), onclick: () => stop(id) }));
+    if (!t) acts.append(H("button", { type: "button", class: "go", text: tr("Start timer"), onclick: act(() => start(kind, open.step, ms)) }));
+    else if (t.done) acts.append(H("button", { type: "button", class: "go", text: tr("Restart"), onclick: act(() => start(kind, open.step, ms)) }));
+    else acts.append(H("button", { type: "button", class: "go", text: tr("Add to calendar"), onclick: act(() => calendar(t)) }), H("button", { type: "button", text: tr("Stop"), onclick: act(() => stop(id)) }));
     return H("div", { class: "trow" }, H("div", { class: "tl" }, H("b", { text: title }), left), acts);
   }
   function panel() {

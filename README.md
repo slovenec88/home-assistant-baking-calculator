@@ -50,7 +50,7 @@ Bake keeps recipes, language and theme in the browser's own storage, so inside H
 ## About this repository
 
 - [`site/`](site) is the Cloudflare Worker that serves Bake. Deploy notes are in [`site/README.md`](site/README.md).
-- The original single-file version, a plain `baking.html` for a Home Assistant `/local/` page, is still on the `main` branch.
+- The original single-file version, a plain `baking.html` for a Home Assistant `/local/` page, now lives on the [`legacy`](../../tree/legacy) branch. The old GitHub Pages address forwards to Bake.
 - The `/concepts/` page of the live site shows every design that was tried on the way, from the original to Material You, Apple glass, a Rams-style panel and a handful of unusual ones.
 
 Made for [juringari.com](https://juringari.com).

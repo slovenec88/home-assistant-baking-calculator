@@ -1,3 +1,5 @@
+> **Legacy version.** This branch keeps the original single-file calculator (`baking.html`) for Home Assistant `/local/` pages. The app has moved on: see **Bake** at https://bake.juringari.com and the `main` branch.
+
 # Home Assistant Baking Calculator
 
 A simple, mobile-friendly Home Assistant dashboard page for bread, sourdough, instant yeast, and Neapolitan-style pizza dough calculations.

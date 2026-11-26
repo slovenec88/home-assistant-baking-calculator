@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bake</title>
 <link rel="preload" href="/fonts/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#e6e3db" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141412" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bake">
 <style>
   /* ---- recipe drawer (structure only; each style supplies colours and shape through its variables) ---- */
   main { padding-bottom: 48px; }
@@ -173,6 +181,10 @@
   #tabs button { text-align: center; }
   .hint { margin-left: 10px; font-size: 0.75rem; font-weight: 400; color: var(--mid); opacity: 0; transition: opacity 500ms ease; }
   .hint.on { opacity: 0.85; }
+  #settings { max-height: calc(100dvh - 76px); overflow: auto; }
+  .installbtn { width: 100%; height: 44px; border: 0; border-radius: 12px; background: var(--ink); color: var(--bg); font-size: 0.9375rem; font-weight: 600; }
+  #settings .note { margin: 8px 2px 0; font-size: 0.8125rem; line-height: 1.35; color: var(--mid); }
+  #settings .note[hidden] { display: none; }
   .num { cursor: default; }
 
 </style>
@@ -565,7 +577,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.4.1";
+  const VERSION = "1.5.0";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -576,7 +588,7 @@ window.BK = (() => {
     "No saved recipes.": "Ni shranjenih receptov.", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
     "Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.": "Brskalnik v tem pogledu blokira shranjevanje, zato recepti obstanejo le do zaprtja strani. Odpri stran v navadnem zavihku, da jih obdržiš.",
     "Dough type": "Vrsta testa", "Proportions of the dough": "Razmerja v testu",
-    "Settings": "Nastavitve", "Drag to adjust": "Povleci za nastavitev", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
+    "Settings": "Nastavitve", "App": "Aplikacija", "Install app": "Namesti aplikacijo", "Installed": "Nameščeno", "Tap Share, then Add to Home Screen.": "Tapni Deli, nato Dodaj na začetni zaslon.", "Open the browser menu and choose Install app or Add to Home screen.": "V meniju brskalnika izberi Namesti aplikacijo ali Dodaj na začetni zaslon.", "Drag to adjust": "Povleci za nastavitev", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
   };
   const KEY = "dough-ratio-assistant:settings:v1";
   const prefs = { lang: null, theme: "system", sound: true, haptics: true, hinted: false };
@@ -603,7 +615,15 @@ window.BK = (() => {
   }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch {} };
   const root = document.documentElement;
-  function applyTheme() { if (prefs.theme === "light" || prefs.theme === "dark") root.dataset.theme = prefs.theme; else delete root.dataset.theme; }
+  const barColors = { light: "#e6e3db", dark: "#141412" };
+  function applyTheme() {
+    if (prefs.theme === "light" || prefs.theme === "dark") root.dataset.theme = prefs.theme; else delete root.dataset.theme;
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => {   // the browser bar follows the chosen theme
+      if (!m.dataset.auto) m.dataset.auto = m.content;
+      m.content = prefs.theme === "light" || prefs.theme === "dark" ? barColors[prefs.theme] : m.dataset.auto;
+      if (prefs.theme === "light" || prefs.theme === "dark") m.removeAttribute("media"); else if (m.dataset.media) m.setAttribute("media", m.dataset.media);
+    });
+  }
   const $ = s => document.querySelector(s);
   function applyStatic() {
     root.lang = lang;
@@ -619,12 +639,35 @@ window.BK = (() => {
     options.forEach(([v, t]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.setAttribute("aria-pressed", String(v === current)); b.onclick = () => pick(v); grp.append(b); });
     wrap.append(l, grp); return wrap;
   }
+  // ---- install as an app ----
+  let deferred = null, installed = false;
+  const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const embedded = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const phone = ios || /android/i.test(navigator.userAgent);
+  addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; drawSettings(); });
+  addEventListener("appinstalled", () => { deferred = null; installed = true; drawSettings(); });
+  function installRow() {
+    if (embedded || standalone() || !/^https?:$/.test(location.protocol)) return null;
+    if (!deferred && !phone) return null;   // a desktop browser without the install prompt has nothing to offer
+    const wrap = document.createElement("div"); wrap.className = "set";
+    const l = document.createElement("div"); l.className = "lab"; l.textContent = tr("App");
+    if (installed) { const done = document.createElement("div"); done.className = "note"; done.textContent = tr("Installed"); wrap.append(l, done); return wrap; }
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "installbtn"; btn.textContent = tr("Install app");
+    const note = document.createElement("p"); note.className = "note"; note.hidden = true; note.textContent = tr(ios ? "Tap Share, then Add to Home Screen." : "Open the browser menu and choose Install app or Add to Home screen.");
+    btn.onclick = () => {
+      if (deferred) { const d = deferred; d.prompt(); d.userChoice.then(c => { if (c.outcome === "accepted") installed = true; deferred = null; drawSettings(); }); }
+      else note.hidden = !note.hidden;
+    };
+    wrap.append(l, btn, note); return wrap;
+  }
   function drawSettings() {
     const el = $("#settings"); el.replaceChildren(
       seg(tr("Language"), [["en", "English"], ["sl", "Slovenščina"]], lang, v => setLang(v)),
       seg(tr("Theme"), [["system", tr("System")], ["light", tr("Light")], ["dark", tr("Dark")]], prefs.theme, v => setTheme(v)),
       seg(tr("Sound"), [["1", tr("On")], ["0", tr("Off")]], prefs.sound ? "1" : "0", v => { prefs.sound = v === "1"; save(); drawSettings(); if (prefs.sound) tick("flour", 100); }),
       seg(tr("Haptics"), [["1", tr("On")], ["0", tr("Off")]], prefs.haptics ? "1" : "0", v => { prefs.haptics = v === "1"; save(); drawSettings(); if (prefs.haptics) tick("flour", 100); }));
+    const inst = installRow(); if (inst) el.append(inst);
     const ver = document.createElement("p"); ver.className = "ver"; ver.textContent = `${tr("Version")} ${VERSION}`; el.append(ver);
   }
   function setLang(v) { lang = v; prefs.lang = v; save(); applyStatic(); drawSettings(); subs.forEach(f => f()); }
@@ -690,6 +733,8 @@ window.BK = (() => {
   addEventListener("pointerdown", () => { if (prefs.sound) { const a = ensure(); if (a && a.state !== "running") a.resume(); } }, { capture: true, passive: true });   // the first touch only wakes the context that is already there
   setTimeout(() => { if (prefs.sound) ensure(); }, 150);   // made a moment after load, so the first touch only has to wake it
 
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { if (m.media) m.dataset.media = m.media; });
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol) && location.pathname === "/" && !embedded) addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
   applyTheme(); applyStatic(); drawSettings();
   $("#sb").addEventListener("click", () => open($("#settings").hidden));
   document.addEventListener("pointerdown", e => { if (!$("#settings").hidden && !e.target.closest("#settings, #sb")) open(false); });

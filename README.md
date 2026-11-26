@@ -20,7 +20,8 @@ A dough calculator for bread and pizza. Drag a wheel, tap a preset, and get ever
 - **Saved recipes** in a drawer at the bottom. Pull it up with your thumb, name the recipe, load it later.
 - **English and Slovenščina**, light, dark or system theme, sound and haptics you can turn off. All in the settings at the top right.
 - **One typeface:** [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next), made for being read easily. Licensed under the SIL Open Font License, a copy is in [`site/public/fonts`](site/public/fonts/OFL-AtkinsonHyperlegibleNext.txt).
-- Made to fit one phone screen. Nothing to install, no account, no tracking.
+- **Install it as an app** from the settings (top right, **Install app**): it gets its own icon, opens full screen and keeps working without a connection.
+- Made to fit one phone screen. No account, no tracking.
 
 ## Add it to Home Assistant
 
@@ -41,7 +42,7 @@ url: https://bake.juringari.com
 aspect_ratio: 170%
 ```
 
-The page loads from the internet, so the phone needs a connection when you open it.
+Inside Home Assistant the page loads from the internet, so the phone needs a connection when you open it. To use Bake without Home Assistant, open it in the browser and install it from the settings.
 
 ## Saved recipes and settings stay on your device
 

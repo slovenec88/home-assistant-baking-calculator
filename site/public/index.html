@@ -171,6 +171,8 @@
   .dough-sr:not(:focus-within) { top: 0; left: 0; }   /* the hidden screen-reader controls sat 1px below the page and made it scroll */
   #tabs button[aria-selected="true"]::before { display: none; }   /* no dot: the filled tab already says which one is active */
   #tabs button { text-align: center; }
+  .hint { margin-left: 10px; font-size: 0.75rem; font-weight: 400; color: var(--mid); opacity: 0; transition: opacity 500ms ease; }
+  .hint.on { opacity: 0.85; }
   .num { cursor: default; }
 
 </style>
@@ -563,7 +565,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.3.1";
+  const VERSION = "1.4.0";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -574,10 +576,10 @@ window.BK = (() => {
     "No saved recipes.": "Ni shranjenih receptov.", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
     "Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.": "Brskalnik v tem pogledu blokira shranjevanje, zato recepti obstanejo le do zaprtja strani. Odpri stran v navadnem zavihku, da jih obdržiš.",
     "Dough type": "Vrsta testa", "Proportions of the dough": "Razmerja v testu",
-    "Settings": "Nastavitve", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
+    "Settings": "Nastavitve", "Drag to adjust": "Povleci za nastavitev", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
   };
   const KEY = "dough-ratio-assistant:settings:v1";
-  const prefs = { lang: null, theme: "system", sound: true, haptics: true };
+  const prefs = { lang: null, theme: "system", sound: true, haptics: true, hinted: false };
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch {}
   const guess = () => /^sl\b/i.test(navigator.language || "") ? "sl" : "en";
   let lang = prefs.lang === "sl" || prefs.lang === "en" ? prefs.lang : guess();
@@ -687,7 +689,7 @@ window.BK = (() => {
   $("#sb").addEventListener("click", () => open($("#settings").hidden));
   document.addEventListener("pointerdown", e => { if (!$("#settings").hidden && !e.target.closest("#settings, #sb")) open(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#settings").hidden) { open(false); $("#sb").focus(); } });
-  return { VERSION, tick, tr, loc, g, n, unit, parse, summary, onChange: f => subs.push(f), get lang() { return lang; } };
+  return { VERSION, hint: { done: () => !!prefs.hinted, mark: () => { prefs.hinted = true; save(); } }, tick, tr, loc, g, n, unit, parse, summary, onChange: f => subs.push(f), get lang() { return lang; } };
 })();
 
 </script>
@@ -808,12 +810,32 @@ window.BK = (() => {
     $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), H("span", { text: s.text }))));
   }
 
+  // First visit only: a quiet hint that the cards are wheels. The ruler of the first wheel drifts a little each way and a small caption fades in; the first touch ends it.
+  function hintOnce() {
+    if (BK.hint.done()) return;
+    BK.hint.mark();
+    const row = document.querySelector(".in"); if (!row) return;
+    const tip = H("span", { class: "hint", text: BK.tr("Drag to adjust") });
+    row.querySelector(".lab").append(tip);
+    requestAnimationFrame(() => tip.classList.add("on"));
+    const ruler = row.querySelector(".ruler"); let anim = null;
+    if (ruler && ruler.animate && ruler._x != null && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const at = d => { const x = ruler._x + d; return `${x}px 100%, ${x}px 100%`; };
+      anim = ruler.animate([{ backgroundPosition: at(0) }, { backgroundPosition: at(-26) }, { backgroundPosition: at(26) }, { backgroundPosition: at(0) }], { duration: 2200, delay: 500, easing: "ease-in-out" });
+    }
+    let timer = 0;
+    const stop = () => { clearTimeout(timer); document.removeEventListener("pointerdown", stop, true); if (anim) anim.cancel(); tip.classList.remove("on"); setTimeout(() => tip.remove(), 500); };
+    document.addEventListener("pointerdown", stop, true);
+    timer = setTimeout(stop, 6500);
+  }
+  let hintTimer = 0;
   Dough.subscribe(model => {
     // only a change in which wheels exist rebuilds them; picking Same day or Kvas just updates the values, so the other wheels stay still
     const key = model.mode + "|" + model.fields.map(f => f.key).join();
     const fresh = key !== structKey;
     if (fresh) { structKey = key; $("#inputs").classList.add("fresh"); build(model); }
     paint(model);
+    if (!hintTimer) hintTimer = setTimeout(hintOnce, 1000);
     if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => $("#inputs").classList.remove("fresh")));
   });
   BK.onChange(() => { if (m) { build(m); paint(m); } });

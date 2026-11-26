@@ -32,6 +32,23 @@
   #dlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: inherit; }
   #dlist b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #dlist span { display: block; color: var(--mid, var(--muted, inherit)); font-size: 0.8125rem; }
+  #plan button.timer { all: unset; box-sizing: border-box; color: var(--mid); font-size: 0.75rem; min-height: 1em; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; touch-action: none; }
+  #plan li.cold button.timer { color: var(--crust); font-weight: 600; }
+  #plan button.timer.run { color: var(--ink); font-weight: 700; text-decoration: none; font-size: 0.6875rem; }
+  #plan button.timer.fin { color: var(--crust); font-weight: 700; text-decoration: none; }
+  #plan button.timer:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #tpop, #tdone { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 24px)); box-sizing: border-box; padding: 14px; border-radius: 16px; background: var(--panel); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 10px 30px rgba(0, 0, 0, 0.2); }
+  #tpop { bottom: 76px; display: grid; gap: 12px; }
+  #tdone { top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; }
+  #tpop[hidden], #tdone[hidden] { display: none; }
+  #tpop .trow { display: grid; gap: 8px; }
+  #tpop .tl { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  #tpop .tl b { font-weight: 600; }
+  #tpop .left { font-size: 1.5rem; font-weight: 700; }
+  #tpop .acts { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+  #tpop button, #tdone button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: none; color: inherit; font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer; touch-action: none; }
+  #tpop button.go, #tdone button { background: var(--accent); color: var(--on-accent, #000); border-color: transparent; font-weight: 700; }
+  #tpop .tnote { margin: 0; font-size: 0.75rem; line-height: 1.35; color: var(--mid); }
   #dlist span.when { font-size: 0.75rem; opacity: 0.8; }
   #dlist button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; border-radius: inherit; }
   #dlist button.load { background: var(--accent); color: var(--on-accent, #000); border-color: transparent; font-weight: 700; }
@@ -204,6 +221,8 @@
   <section id="out" aria-live="polite"></section>
   <ol id="plan"></ol>
 </main>
+<div id="tpop" role="dialog" hidden></div>
+<div id="tdone" role="status" hidden></div>
 <aside id="drawer" aria-label="Saved recipes">
   <button id="dh" type="button" aria-expanded="false" aria-controls="dbody"><span class="grip" aria-hidden="true"></span><span id="dl">Recipes</span></button>
   <div id="dbody" inert>
@@ -347,13 +366,13 @@ const Dough = (() => {
 
   /* ---- plan as a timeline. Only the rests named in the original text have hours; the rest are untimed steps ---- */
   function timeline(mode, p) {
-    const T = (label, hours, text, fridge) => ({ label, hours: hours || null, text: text || (hours ? hours + " h" : ""), fridge: !!fridge });
-    if (mode === "sourdough") return [T("Mix"), T("Rest", 4), T("Basket"), T("Bake")];
+    const T = (label, hours, text, fridge, fold) => ({ label, hours: hours || null, text: text || (hours ? hours + " h" : ""), fridge: !!fridge, fold: !!fold });
+    if (mode === "sourdough") return [T("Mix"), T("Rest", 4, "", false, true), T("Basket"), T("Bake")];
     if (mode === "instant") return [T("Mix"), T("Rest", 1.5, "1-2 h"), T("Basket"), T("Bake")];
     const sd = p.yeastType === "sourdough", next = p.proof === "nextDay";
-    if (!next) return [T("Mix"), T("Rest", 4), T("Divide"), T("Double"), T("Bake")];
+    if (!next) return [T("Mix"), T("Rest", 4, "", false, sd), T("Divide"), T("Double"), T("Bake")];
     if (!sd) return [T("Mix"), T("Chill", 24, "24 h", true), T("Rest", 2), T("Divide"), T("Double"), T("Bake")];
-    return [T("Mix"), T("Rest", 2), T("Divide"), T("Chill", 24, "24 h", true), T("Double"), T("Bake")];
+    return [T("Mix"), T("Rest", 2, "", false, true), T("Divide"), T("Chill", 24, "24 h", true), T("Double"), T("Bake")];
   }
 
   function model() {
@@ -579,7 +598,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.6.2";
+  const VERSION = "1.7.0";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -587,7 +606,7 @@ window.BK = (() => {
     "Mix": "Mešaj", "Rest": "Počitek", "Basket": "Košara", "Bake": "Peka", "Divide": "Delitev", "Double": "Vzhaja", "Chill": "Hladi",
     "Sourdough bread": "Kruh z drožmi", "Instant yeast bread": "Kruh s kvasom", "Neapolitan pizza": "Neapeljska pica",
     "Name this recipe": "Poimenuj recept", "Recipe name": "Ime recepta", "Save": "Shrani", "Saved": "Shranjeno", "Saved for this session": "Shranjeno za to sejo",
-    "No saved recipes.": "Ni shranjenih receptov.", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
+    "No saved recipes.": "Ni shranjenih receptov.", "Timer": "Časovnik", "Start timer": "Zaženi časovnik", "Restart": "Znova", "Stop": "Ustavi", "Add to calendar": "Dodaj v koledar", "Fold": "Prepogibanje", "Done": "Končano", "OK": "V redu", "A reminder follows your phone's sound settings. For something that must wake you, use the alarm in the Clock app.": "Opomnik sledi zvoku telefona. Za nekaj, kar te mora zbuditi, uporabi budilko v aplikaciji Ura.", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
     "Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.": "Brskalnik v tem pogledu blokira shranjevanje, zato recepti obstanejo le do zaprtja strani. Odpri stran v navadnem zavihku, da jih obdržiš.",
     "Dough type": "Vrsta testa", "Proportions of the dough": "Razmerja v testu",
     "Settings": "Nastavitve", "App": "Aplikacija", "Install app": "Namesti aplikacijo", "Installed": "Nameščeno", "Tap Share, then Add to Home Screen.": "Tapni Deli, nato Dodaj na začetni zaslon.", "Open the browser menu and choose Install app or Add to Home screen.": "V meniju brskalnika izberi Namesti aplikacijo ali Dodaj na začetni zaslon.", "Drag to adjust": "Povleci za nastavitev", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
@@ -715,6 +734,14 @@ window.BK = (() => {
       o.connect(og).connect(master); o.start(t); o.stop(t + 0.07);
     }
   }
+  // the sound of a finished timer: a short run of beeps (and a long vibration), clearly not a tick
+  function ring() {
+    if (prefs.haptics && navigator.vibrate) { try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {} }
+    if (!prefs.sound) return;
+    const a = ensure(); if (!a) return; a.resume();
+    const t0 = a.currentTime + 0.05;
+    for (let i = 0; i < 6; i++) { const o = a.createOscillator(), g = a.createGain(), t = t0 + i * 0.32; o.type = "sine"; o.frequency.value = i % 2 ? 1175 : 880; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + 0.28); o.connect(g).connect(master); o.start(t); o.stop(t + 0.3); }
+  }
   function buzz(major) {
     if (navigator.vibrate) { try { navigator.vibrate(major ? 16 : 7); } catch {} return; }
     // iOS Safari has no vibrate(); toggling a switch input gives a light haptic tap there (17.4 and later)
@@ -738,7 +765,7 @@ window.BK = (() => {
   $("#sb").addEventListener("click", () => open($("#settings").hidden));
   document.addEventListener("pointerdown", e => { if (!$("#settings").hidden && !e.target.closest("#settings, #sb")) open(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#settings").hidden) { open(false); $("#sb").focus(); } });
-  return { VERSION, hint: { done: () => !!prefs.hinted, mark: () => { prefs.hinted = true; save(); } }, tick, tr, loc, g, n, unit, parse, summary, onChange: f => subs.push(f), get lang() { return lang; } };
+  return { VERSION, ring, hint: { done: () => !!prefs.hinted, mark: () => { prefs.hinted = true; save(); } }, tick, tr, loc, g, n, unit, parse, summary, onChange: f => subs.push(f), get lang() { return lang; } };
 })();
 
 </script>
@@ -856,7 +883,7 @@ window.BK = (() => {
     bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important"));
     while (fs > 30 && bigs.some(b => b.scrollWidth > b.clientWidth)) { fs -= 1; bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important")); }
     $("#plan").dataset.n = String(model.timeline.length);
-    $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), H("span", { text: s.text }))));
+    $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "data-step": s.label, "data-hours": s.hours || "", "data-fold": s.fold ? "1" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), s.hours ? H("button", { type: "button", class: "timer", text: s.text, "data-text": s.text, "aria-label": BK.tr("Timer") + ": " + BK.tr(s.label) + " " + s.text }) : H("span", { text: s.text }))));
   }
 
   // First visit only: a quiet hint that the cards are wheels. The ruler of the first wheel drifts a little each way and a small caption fades in; the first touch ends it.
@@ -969,7 +996,7 @@ window.BK = (() => {
 <script>
 // A finger that slides a little still taps. The browser would call that a drag and drop the click, which felt like the button not responding.
 (() => {
-  const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo";
+  const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo, #plan button, #tpop button, #tdone button";
   let down = null, handled = null;
   document.addEventListener("pointerdown", e => { const b = e.target.closest && e.target.closest(SEL); down = b && !b.disabled ? { b, id: e.pointerId, t: performance.now() } : null; }, true);
   document.addEventListener("pointerup", e => {
@@ -985,6 +1012,98 @@ window.BK = (() => {
     if (e.isTrusted && e.detail > 0 && handled && performance.now() - handled.t < 700 && e.target.closest && e.target.closest(SEL) === handled.b) { e.stopImmediatePropagation(); e.preventDefault(); }
   }, true);
 })();
+</script>
+<script>
+/* Bake timers. A timer is stored as the moment it ends, never as a countdown, so it is right after the app was closed, reloaded or killed.
+   Tap a timed step of the plan: start its timer, or (for sourdough rests) a 30 minute timer for the folds. A running timer can also be put into the phone's calendar. */
+(() => {
+  const KEY = "dough-ratio-assistant:timers:v1", $ = s => document.querySelector(s), tr = s => BK.tr(s);
+  const FOLD = 30 * 60 * 1000;
+  const H = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] != null && attrs[k] !== false) e.setAttribute(k, attrs[k]); } kids.forEach(c => e.append(c)); return e; };
+  let mem = [];
+  const read = () => { try { const a = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(a) ? a : []; } catch { return mem.slice(); } };
+  let list = read(), open = null, timer = 0;
+  const save = () => { mem = list.slice(); try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {} };
+  const p2 = n => String(n).padStart(2, "0");
+  const fmt = ms => { let s = Math.max(0, Math.ceil(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); s %= 60; return h ? `${h}:${p2(m)}:${p2(s)}` : `${m}:${p2(s)}`; };
+  const num = x => BK.lang === "sl" ? String(x).replace(".", ",") : String(x);
+  const dur = ms => ms >= 3600000 ? num(ms / 3600000) + " h" : num(ms / 60000) + " min";
+  const find = id => list.find(t => t.id === id);
+  const name = t => t.kind === "fold" ? tr("Fold") : tr(t.step);
+
+  function start(kind, step, ms) {
+    list = list.filter(t => t.id !== kind + ":" + step);
+    list.push({ id: kind + ":" + step, kind, step, end: Date.now() + ms, total: ms, done: false });
+    save(); tick(); panel();
+  }
+  function stop(id) { list = list.filter(t => t.id !== id); save(); tick(); panel(); }
+
+  function calendar(t) {
+    const z = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""), title = "Bake: " + name(t);
+    const text = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bake//bake.juringari.com//EN", "BEGIN:VEVENT",
+      "UID:" + t.kind + t.step.replace(/\W/g, "") + t.end + "@bake.juringari.com", "DTSTAMP:" + z(Date.now()), "DTSTART:" + z(t.end), "DTEND:" + z(t.end + 300000),
+      "SUMMARY:" + title, "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + title, "TRIGGER:PT0S", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n") + "\r\n";
+    const url = URL.createObjectURL(new Blob([text], { type: "text/calendar" })), a = document.createElement("a");
+    a.href = url; a.download = "bake-" + t.kind + "-" + t.step.toLowerCase() + ".ics"; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  /* ---- the plan strip: a timed step is a button; while its timer runs it shows the time left ---- */
+  function cells() {
+    const now = Date.now();
+    document.querySelectorAll("#plan li[data-step] button.timer").forEach(b => {
+      const step = b.closest("li").dataset.step;
+      const t = [find("step:" + step), find("fold:" + step)].filter(Boolean).sort((x, y) => (x.done - y.done) || (x.end - y.end))[0];
+      b.textContent = !t ? b.dataset.text : t.done ? tr("Done") : fmt(t.end - now);
+      b.classList.toggle("run", !!t && !t.done); b.classList.toggle("fin", !!t && t.done);
+    });
+  }
+
+  /* ---- the panel that opens from a step ---- */
+  const pop = () => $("#tpop");
+  function row(kind, title, ms) {
+    const id = kind + ":" + open.step, t = find(id), now = Date.now();
+    const left = H("span", { class: "left", "data-left": id, text: t ? (t.done ? tr("Done") : fmt(t.end - now)) : dur(ms) });
+    const acts = H("div", { class: "acts" });
+    if (!t) acts.append(H("button", { type: "button", class: "go", text: tr("Start timer"), onclick: () => start(kind, open.step, ms) }));
+    else if (t.done) acts.append(H("button", { type: "button", class: "go", text: tr("Restart"), onclick: () => start(kind, open.step, ms) }));
+    else acts.append(H("button", { type: "button", text: tr("Add to calendar"), onclick: () => calendar(t) }), H("button", { type: "button", text: tr("Stop"), onclick: () => stop(id) }));
+    return H("div", { class: "trow" }, H("div", { class: "tl" }, H("b", { text: title }), left), acts);
+  }
+  function panel() {
+    const el = pop(); if (!open) { el.hidden = true; return; }
+    el.replaceChildren(row("step", tr(open.step), open.hours * 3600000), ...(open.fold ? [row("fold", tr("Fold"), FOLD)] : []), H("p", { class: "tnote", text: tr("A reminder follows your phone's sound settings. For something that must wake you, use the alarm in the Clock app.") }));
+    el.setAttribute("aria-label", tr("Timer") + ": " + tr(open.step)); el.hidden = false;
+  }
+  function openFor(li) {
+    const same = open && open.step === li.dataset.step && !pop().hidden;
+    open = same ? null : { step: li.dataset.step, hours: +li.dataset.hours, fold: li.dataset.fold === "1" }; panel();
+  }
+
+  /* ---- the clock: the time left, and the moment a timer runs out ---- */
+  function banner() {
+    const el = $("#tdone"), t = list.find(x => x.done);
+    if (!t) { el.hidden = true; return; }
+    el.replaceChildren(H("span", { text: name(t) + ": " + tr("Done") }), H("button", { type: "button", text: tr("OK"), onclick: () => { list = list.filter(x => !x.done); save(); tick(); } }));
+    el.hidden = false;
+  }
+  function tick() {
+    const now = Date.now(); let changed = false;
+    list.forEach(t => { if (!t.done && now >= t.end) { t.done = true; changed = true; save(); if (now - t.end < 8000) BK.ring(); } });
+    cells(); banner(); if (changed && open) panel();
+    pop().querySelectorAll("[data-left]").forEach(s => { const t = find(s.dataset.left); if (t && !t.done) s.textContent = fmt(t.end - now); });
+    if (!list.length) { clearInterval(timer); timer = 0; } else if (!timer) timer = setInterval(tick, 1000);
+  }
+
+  $("#plan").addEventListener("click", e => { const b = e.target.closest("button.timer"); if (b) openFor(b.closest("li")); });
+  document.addEventListener("pointerdown", e => { if (!pop().hidden && !e.target.closest("#tpop, #plan button.timer")) { open = null; panel(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop().hidden) { open = null; panel(); } });
+  new MutationObserver(() => { cells(); if (open) panel(); }).observe($("#plan"), { childList: true });
+  BK.onChange(() => { cells(); banner(); if (open) panel(); });
+  addEventListener("storage", e => { if (e.key === KEY) { list = read(); tick(); if (open) panel(); } });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+  tick();
+})();
+
 </script>
 </body>
 </html>

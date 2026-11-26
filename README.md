@@ -8,14 +8,16 @@ A dough calculator for bread and pizza. Drag a wheel, tap a preset, and get ever
 
 | Bread | Pizza |
 | :---: | :---: |
-| <img src="docs/bake-bread-light.png" width="300" alt="Bake bread calculator in light mode: 1,200 g flour, 70 percent hydration, 10 percent starter"> | <img src="docs/bake-pizza-dark.png" width="300" alt="Bake pizza calculator in dark mode: six dough balls, sourdough, next day"> |
-| <img src="docs/bake-bread-dark.png" width="300" alt="Bake bread calculator in dark mode"> | <img src="docs/bake-pizza-light.png" width="300" alt="Bake pizza calculator in light mode"> |
+| <img src="docs/bake-bread-light.png" width="300" alt="Bake bread calculator in light mode: 1,200 g flour, 70 percent hydration, 10 percent starter, rest timer running"> | <img src="docs/bake-pizza-dark.png" width="300" alt="Bake pizza calculator in dark mode: six dough balls, sourdough, next day"> |
+| <img src="docs/bake-timer-dark.png" width="300" alt="Bake timers: a 4 hour rest and a 30 minute fold timer running, with Add to calendar buttons"> | <img src="docs/bake-pizza-light.png" width="300" alt="Bake pizza calculator in light mode"> |
 
 ## What it does
 
 - **Bread** with sourdough or with yeast, **pizza** with sourdough or with instant yeast, same day or next day.
-- **Wheels instead of fields.** Drag anywhere on a card to change a value. The ruler follows your finger, with a click on every step and a firmer one on round numbers.
+- **Wheels instead of fields.** Drag anywhere on a card to change a value, even starting on a preset button. The ruler follows your finger, with a small click on every step.
 - **The amounts you pour and scoop come first:** water, the leavening, flour (for pizza) and salt are highlighted. Total dough is there, but quiet.
+- **Timers for the long steps.** Tap the time of a step (the 4 h rest, the 24 h chill) to start a timer. Sourdough rests also get a 30 minute timer for the folds. A timer remembers when it ends, so it is right after you close the app. **Add to calendar** puts it in your phone's calendar with an alert at the end.
+- **The bake step says what to set the oven to:** 235 °C for 45 minutes.
 - **Presets** for the amounts you use most (800 g and 1200 g flour, 65 % and 70 % hydration, 5 % and 10 % starter).
 - **Saved recipes** in a drawer at the bottom. Pull it up with your thumb, name the recipe, load it later.
 - **English and Slovenščina**, light, dark or system theme, sound and haptics you can turn off. All in the settings at the top right.

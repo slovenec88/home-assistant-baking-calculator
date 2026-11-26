@@ -600,7 +600,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.7.4";
+  const VERSION = "1.8.0";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -825,7 +825,7 @@ window.BK = (() => {
       Dough.drag(num, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onTap: () => edit(num, f), onStart: () => row.classList.add("live"), onMove: r => { const cur = valueOf(f.key); frac[f.key] = cur <= f.min || cur >= f.max ? 0 : r; rulerPos(row, { key: f.key, drag: f.drag, value: cur }); }, onEnd: () => { row.classList.remove("live"); frac[f.key] = 0; rulerPos(row, { key: f.key, drag: f.drag, value: valueOf(f.key) }); } });
       Dough.drag(ruler, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onStart: () => row.classList.add("live"), onMove: r => { const cur = valueOf(f.key); frac[f.key] = cur <= f.min || cur >= f.max ? 0 : r; rulerPos(row, { key: f.key, drag: f.drag, value: cur }); }, onEnd: () => { row.classList.remove("live"); frac[f.key] = 0; rulerPos(row, { key: f.key, drag: f.drag, value: valueOf(f.key) }); } });
       // the whole card is a wheel: the empty parts of it drag too, only the chips and the number keep their own taps
-      Dough.drag(row, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, ignore: e => !!e.target.closest(".pre button, .num, .ruler"), onStart: () => row.classList.add("live"), onMove: r => { const cur = valueOf(f.key); frac[f.key] = cur <= f.min || cur >= f.max ? 0 : r; rulerPos(row, { key: f.key, drag: f.drag, value: cur }); }, onEnd: () => { row.classList.remove("live"); frac[f.key] = 0; rulerPos(row, { key: f.key, drag: f.drag, value: valueOf(f.key) }); } });
+      Dough.drag(row, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, ignore: e => !!e.target.closest(".num, .ruler"), onStart: () => row.classList.add("live"), onMove: r => { const cur = valueOf(f.key); frac[f.key] = cur <= f.min || cur >= f.max ? 0 : r; rulerPos(row, { key: f.key, drag: f.drag, value: cur }); }, onEnd: () => { row.classList.remove("live"); frac[f.key] = 0; rulerPos(row, { key: f.key, drag: f.drag, value: valueOf(f.key) }); } });
       num.addEventListener("keydown", e => {
         const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
         if (dir) { e.preventDefault(); Dough.step(f.key, dir); }
@@ -1000,10 +1000,11 @@ window.BK = (() => {
 (() => {
   const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo, #plan button, #tpop button, #tdone button";
   let down = null, handled = null;
-  document.addEventListener("pointerdown", e => { const b = e.target.closest && e.target.closest(SEL); down = b && !b.disabled ? { b, id: e.pointerId, t: performance.now() } : null; }, true);
+  document.addEventListener("pointerdown", e => { const b = e.target.closest && e.target.closest(SEL); down = b && !b.disabled ? { b, id: e.pointerId, t: performance.now(), x: e.clientX } : null; }, true);
   document.addEventListener("pointerup", e => {
     if (!down || e.pointerId !== down.id) return;
     const d = down; down = null;
+    if (d.b.closest(".pre") && Math.abs(e.clientX - d.x) >= 8) { handled = { b: d.b, t: performance.now() }; return; }   // a preset dragged sideways turned the wheel: it is not a tap
     if (performance.now() - d.t > 900) return;
     const r = d.b.getBoundingClientRect(), m = 24;
     if (e.clientX < r.left - m || e.clientX > r.right + m || e.clientY < r.top - m || e.clientY > r.bottom + m) return;

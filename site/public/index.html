@@ -32,6 +32,8 @@
   #dlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: inherit; }
   #dlist b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #dlist span { display: block; color: var(--mid, var(--muted, inherit)); font-size: 0.8125rem; }
+  #plan[data-n="4"] li span { white-space: nowrap; font-size: 0.6875rem; letter-spacing: -0.01em; }
+  @media (max-width: 340px) { #plan[data-n="4"] li span { font-size: 0.625rem; letter-spacing: -0.02em; } }
   #plan button.timer { all: unset; box-sizing: border-box; color: var(--mid); font-size: 0.75rem; min-height: 1em; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; touch-action: none; }
   #plan li.cold button.timer { color: var(--crust); font-weight: 600; }
   #plan button.timer.run { color: var(--ink); font-weight: 700; text-decoration: none; font-size: 0.6875rem; }
@@ -367,8 +369,8 @@ const Dough = (() => {
   /* ---- plan as a timeline. Only the rests named in the original text have hours; the rest are untimed steps ---- */
   function timeline(mode, p) {
     const T = (label, hours, text, fridge, fold) => ({ label, hours: hours || null, text: text || (hours ? hours + " h" : ""), fridge: !!fridge, fold: !!fold });
-    if (mode === "sourdough") return [T("Mix"), T("Rest", 4, "", false, true), T("Basket"), T("Bake")];
-    if (mode === "instant") return [T("Mix"), T("Rest", 1.5, "1-2 h"), T("Basket"), T("Bake")];
+    if (mode === "sourdough") return [T("Mix"), T("Rest", 4, "", false, true), T("Basket"), T("Bake", null, "235 °C, 45 min")];
+    if (mode === "instant") return [T("Mix"), T("Rest", 1.5, "1-2 h"), T("Basket"), T("Bake", null, "235 °C, 45 min")];
     const sd = p.yeastType === "sourdough", next = p.proof === "nextDay";
     if (!next) return [T("Mix"), T("Rest", 4, "", false, sd), T("Divide"), T("Double"), T("Bake")];
     if (!sd) return [T("Mix"), T("Chill", 24, "24 h", true), T("Rest", 2), T("Divide"), T("Double"), T("Bake")];
@@ -598,7 +600,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.7.2";
+  const VERSION = "1.7.3";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",

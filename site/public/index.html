@@ -600,7 +600,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.7.3";
+  const VERSION = "1.7.4";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -1043,10 +1043,12 @@ window.BK = (() => {
   function stop(id) { list = list.filter(t => t.id !== id); lockUntil = performance.now() + 500; save(); tick(); panel(); }
 
   function calendar(t) {
-    const z = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""), title = "Bake: " + name(t) + " " + dur(t.total), begin = t.end - t.total;
-    const text = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bake//bake.juringari.com//EN", "BEGIN:VEVENT",
-      "UID:" + t.kind + t.step.replace(/\W/g, "") + t.end + "@bake.juringari.com", "DTSTAMP:" + z(Date.now()), "DTSTART:" + z(begin), "DTEND:" + z(t.end),
-      "SUMMARY:" + title, "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + title + " - " + tr("Done"), "TRIGGER;VALUE=DATE-TIME:" + z(t.end), "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n") + "\r\n";
+    const z = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""), title = "Bake: " + name(t) + " " + dur(t.total), begin = t.end - t.total, uid = t.kind + t.step.replace(/\W/g, "") + t.end;
+    // two events: the whole stretch of time, and a short one that starts exactly when the timer ends and carries the alert. Calendar apps agree on an alert "at the start" of an event, and differ on every other kind.
+    const text = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bake//bake.juringari.com//EN",
+      "BEGIN:VEVENT", "UID:" + uid + "@bake.juringari.com", "DTSTAMP:" + z(Date.now()), "DTSTART:" + z(begin), "DTEND:" + z(t.end), "SUMMARY:" + title, "TRANSP:TRANSPARENT", "END:VEVENT",
+      "BEGIN:VEVENT", "UID:" + uid + "-end@bake.juringari.com", "DTSTAMP:" + z(Date.now()), "DTSTART:" + z(t.end), "DTEND:" + z(t.end + 60000), "SUMMARY:" + title + ", " + tr("Done"),
+      "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + title + ", " + tr("Done"), "TRIGGER:-PT0S", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n") + "\r\n";
     const url = URL.createObjectURL(new Blob([text], { type: "text/calendar" })), a = document.createElement("a");
     a.href = url; a.download = "bake-" + t.kind + "-" + t.step.toLowerCase() + ".ics"; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
   }

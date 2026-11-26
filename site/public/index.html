@@ -577,7 +577,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.5.1";
+  const VERSION = "1.5.2";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -730,7 +730,7 @@ window.BK = (() => {
   function tick(key, val) {
     const now = performance.now(); if (now - last < 14) return; last = now;
     const m = MAJOR[key], major = !!m && Math.abs(val / m - Math.round(val / m)) < 1e-6;
-    if (prefs.sound) click(major);
+    if (prefs.sound) click(false);   // every step sounds the same: no heavier tick on round numbers
     if (prefs.haptics) buzz(major);
   }
   window.__tick = tick;

@@ -565,7 +565,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.4.0";
+  const VERSION = "1.4.1";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -633,7 +633,7 @@ window.BK = (() => {
   /* ---- clicks: a short mechanical tick for every step of a wheel, a heavier one on the round numbers ---- */
   let ac = null, last = 0, iosSwitch = null;   // ac: null = not made yet, false = not available
   const MAJOR = { flour: 100, hydration: 5, pizzaHydration: 5, starterPct: 5, balls: 4, yeastPct: 0.5 };
-  let master = null, voices = 0, lastBody = 0;
+  let master = null, voices = 0, lastBody = 0; const pending = [];
   // Creating an audio context can block the page for a few hundred milliseconds on a phone. Do it once the page is idle, never in the middle of a tap.
   function ensure() {
     if (ac === null) {
@@ -643,15 +643,20 @@ window.BK = (() => {
         master = ac.createGain(); master.gain.value = 0.6;
         const lim = ac.createDynamicsCompressor(); lim.threshold.value = -14; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.001; lim.release.value = 0.06;
         master.connect(lim).connect(ac.destination);
+        ac.onstatechange = () => { if (ac.state === "running") pending.splice(0).filter(p => performance.now() - p.t < 450).forEach((p, i) => setTimeout(() => click(p.major), i * 35)); };
       } catch { ac = false; }
     }
     return ac;
   }
   function audio() { const a = ensure(); if (a && a.state === "suspended") a.resume(); return a; }
   function click(major) {
-    const a = audio();
-    // a context that is still suspended queues everything and then plays it at once, which is the loud thud: drop those ticks instead
-    if (!a || a.state !== "running" || voices >= 5) return;
+    const a = ensure();
+    if (!a) return;
+    if (a.state !== "running") {
+      // still waking up (the first touch): wake it now and keep the latest tick or two, played one after another once it runs, never all at once
+      a.resume(); pending.push({ major, t: performance.now() }); if (pending.length > 2) pending.shift(); return;
+    }
+    if (voices >= 5) return;
     const t = a.currentTime + 0.005, jitter = 1 + (Math.random() - 0.5) * 0.08;
     const len = Math.floor(a.sampleRate * 0.03), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3) * Math.min(1, i / 24);   // a decaying noise burst is the "tick"; the first samples fade in so it starts without a pop
@@ -682,8 +687,8 @@ window.BK = (() => {
     if (prefs.haptics) buzz(major);
   }
   window.__tick = tick;
-  addEventListener("pointerdown", () => { if (prefs.sound && ac && ac.state === "suspended") ac.resume(); }, { capture: true, passive: true });   // the first touch only wakes the context that is already there
-  (window.requestIdleCallback || (f => setTimeout(f, 800)))(() => { if (prefs.sound) ensure(); }, { timeout: 2500 });
+  addEventListener("pointerdown", () => { if (prefs.sound) { const a = ensure(); if (a && a.state !== "running") a.resume(); } }, { capture: true, passive: true });   // the first touch only wakes the context that is already there
+  setTimeout(() => { if (prefs.sound) ensure(); }, 150);   // made a moment after load, so the first touch only has to wake it
 
   applyTheme(); applyStatic(); drawSettings();
   $("#sb").addEventListener("click", () => open($("#settings").hidden));

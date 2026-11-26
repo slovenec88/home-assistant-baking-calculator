@@ -169,6 +169,8 @@
   #inputs.fresh .ruler { transition: none !important; }   /* wheels that are built fresh appear in place, they do not slide in */
   #tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo { touch-action: none; }   /* a slightly sliding tap must not turn into a page scroll that cancels it */
   .dough-sr:not(:focus-within) { top: 0; left: 0; }   /* the hidden screen-reader controls sat 1px below the page and made it scroll */
+  #tabs button[aria-selected="true"]::before { display: none; }   /* no dot: the filled tab already says which one is active */
+  #tabs button { text-align: center; }
   .num { cursor: default; }
 
 </style>

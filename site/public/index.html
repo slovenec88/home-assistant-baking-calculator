@@ -577,7 +577,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.5.0";
+  const VERSION = "1.5.1";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -677,6 +677,8 @@ window.BK = (() => {
   let ac = null, last = 0, iosSwitch = null;   // ac: null = not made yet, false = not available
   const MAJOR = { flour: 100, hydration: 5, pizzaHydration: 5, starterPct: 5, balls: 4, yeastPct: 0.5 };
   let master = null, voices = 0, lastBody = 0; const pending = [];
+  // Real speakers (desktop, laptop) play the low body of the click as a thud. A phone speaker cannot, and there the body is what makes the click feel deep, so only a touch screen gets it.
+  const deep = () => matchMedia("(pointer: coarse)").matches;
   // Creating an audio context can block the page for a few hundred milliseconds on a phone. Do it once the page is idle, never in the middle of a tap.
   function ensure() {
     if (ac === null) {
@@ -704,11 +706,13 @@ window.BK = (() => {
     const len = Math.floor(a.sampleRate * 0.03), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3) * Math.min(1, i / 24);   // a decaying noise burst is the "tick"; the first samples fade in so it starts without a pop
     const src = a.createBufferSource(); src.buffer = buf; voices++; src.onended = () => { voices = Math.max(0, voices - 1); };
-    const bp = a.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = (major ? 1500 : 2200) * jitter; bp.Q.value = 1.1;
+    const bp = a.createBiquadFilter(); bp.type = "bandpass"; const warm = deep();
+    bp.frequency.value = (warm ? (major ? 1500 : 2200) : (major ? 2000 : 2800)) * jitter; bp.Q.value = warm ? 1.1 : 1.4;
+    const hp = a.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = warm ? 90 : 700;   // nothing below 700 Hz on a desktop: no thud, only the tick
     const g = a.createGain(); g.gain.setValueAtTime(major ? 0.42 : 0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + (major ? 0.05 : 0.03));
-    src.connect(bp).connect(g).connect(master); src.start(t);
+    src.connect(hp).connect(bp).connect(g).connect(master); src.start(t);
     // a small low body under the click, but never stacked: at most one every 60 ms, and only a little
-    if (major || t - lastBody > 0.06) {
+    if (warm && (major || t - lastBody > 0.06)) {
       lastBody = t;
       const o = a.createOscillator(), og = a.createGain();
       // a triangle wave: phone speakers cannot play the low note itself, but its upper harmonics make the click sound deep, in a browser and in a WebView alike

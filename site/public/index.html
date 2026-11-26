@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Bake">
 <style>
+  * { -webkit-tap-highlight-color: transparent; }
   /* ---- recipe drawer (structure only; each style supplies colours and shape through its variables) ---- */
   main { padding-bottom: 48px; }
   #drawer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; width: min(560px, 100%); margin: 0 auto; background: var(--bg); color: var(--ink); border-top: 2px solid var(--line); transform: translateY(var(--ty, calc(100% - var(--hh, 60px)))); transition: transform 240ms cubic-bezier(0.2, 0.9, 0.25, 1); will-change: transform; }
@@ -31,9 +32,6 @@
   #dlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: inherit; }
   #dlist b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #dlist span { display: block; color: var(--mid, var(--muted, inherit)); font-size: 0.8125rem; }
-  #plan button.timer { all: unset; box-sizing: border-box; color: var(--mid); font-size: 0.75rem; min-height: 1em; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; touch-action: none; }
-  #plan li.cold button.timer { color: var(--crust); font-weight: 600; }
-  #plan button.timer:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   #dlist span.when { font-size: 0.75rem; opacity: 0.8; }
   #dlist button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; border-radius: inherit; }
   #dlist button.load { background: var(--accent); color: var(--on-accent, #000); border-color: transparent; font-weight: 700; }
@@ -581,7 +579,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.6.0";
+  const VERSION = "1.6.2";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -589,7 +587,7 @@ window.BK = (() => {
     "Mix": "Mešaj", "Rest": "Počitek", "Basket": "Košara", "Bake": "Peka", "Divide": "Delitev", "Double": "Vzhaja", "Chill": "Hladi",
     "Sourdough bread": "Kruh z drožmi", "Instant yeast bread": "Kruh s kvasom", "Neapolitan pizza": "Neapeljska pica",
     "Name this recipe": "Poimenuj recept", "Recipe name": "Ime recepta", "Save": "Shrani", "Saved": "Shranjeno", "Saved for this session": "Shranjeno za to sejo",
-    "No saved recipes.": "Ni shranjenih receptov.", "Add to Clock": "Dodaj v Uro", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
+    "No saved recipes.": "Ni shranjenih receptov.", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
     "Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.": "Brskalnik v tem pogledu blokira shranjevanje, zato recepti obstanejo le do zaprtja strani. Odpri stran v navadnem zavihku, da jih obdržiš.",
     "Dough type": "Vrsta testa", "Proportions of the dough": "Razmerja v testu",
     "Settings": "Nastavitve", "App": "Aplikacija", "Install app": "Namesti aplikacijo", "Installed": "Nameščeno", "Tap Share, then Add to Home Screen.": "Tapni Deli, nato Dodaj na začetni zaslon.", "Open the browser menu and choose Install app or Add to Home screen.": "V meniju brskalnika izberi Namesti aplikacijo ali Dodaj na začetni zaslon.", "Drag to adjust": "Povleci za nastavitev", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
@@ -680,7 +678,7 @@ window.BK = (() => {
   /* ---- clicks: a short mechanical tick for every step of a wheel, a heavier one on the round numbers ---- */
   let ac = null, last = 0, iosSwitch = null;   // ac: null = not made yet, false = not available
   const MAJOR = { flour: 100, hydration: 5, pizzaHydration: 5, starterPct: 5, balls: 4, yeastPct: 0.5 };
-  let master = null, voices = 0, lastBody = 0; const pending = [];
+  let master = null, lastBody = 0;
   // Real speakers (desktop, laptop) play the low body of the click as a thud. A phone speaker cannot, and there the body is what makes the click feel deep, so only a touch screen gets it.
   const deep = () => matchMedia("(pointer: coarse)").matches;
   // Creating an audio context can block the page for a few hundred milliseconds on a phone. Do it once the page is idle, never in the middle of a tap.
@@ -688,11 +686,7 @@ window.BK = (() => {
     if (ac === null) {
       try {
         ac = new (window.AudioContext || window.webkitAudioContext)();
-        // everything goes through one gain and a limiter, so a burst of ticks can never add up into a thud
-        master = ac.createGain(); master.gain.value = 0.6;
-        const lim = ac.createDynamicsCompressor(); lim.threshold.value = -14; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.001; lim.release.value = 0.06;
-        master.connect(lim).connect(ac.destination);
-        ac.onstatechange = () => { if (ac.state === "running") pending.splice(0).filter(p => performance.now() - p.t < 450).forEach((p, i) => setTimeout(() => click(p.major), i * 35)); };
+        master = ac.createGain(); master.gain.value = 0.6; master.connect(ac.destination);
       } catch { ac = false; }
     }
     return ac;
@@ -701,15 +695,11 @@ window.BK = (() => {
   function click(major) {
     const a = ensure();
     if (!a) return;
-    if (a.state !== "running") {
-      // still waking up (the first touch): wake it now and keep the latest tick or two, played one after another once it runs, never all at once
-      a.resume(); pending.push({ major, t: performance.now() }); if (pending.length > 2) pending.shift(); return;
-    }
-    if (voices >= 5) return;
+    if (a.state !== "running") { a.resume(); return; }   // still asleep: ask again on every step, the first one that is allowed wakes it
     const t = a.currentTime + 0.005, jitter = 1 + (Math.random() - 0.5) * 0.08;
     const len = Math.floor(a.sampleRate * 0.03), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3) * Math.min(1, i / 24);   // a decaying noise burst is the "tick"; the first samples fade in so it starts without a pop
-    const src = a.createBufferSource(); src.buffer = buf; voices++; src.onended = () => { voices = Math.max(0, voices - 1); };
+    const src = a.createBufferSource(); src.buffer = buf;
     const bp = a.createBiquadFilter(); bp.type = "bandpass"; const warm = deep();
     bp.frequency.value = (warm ? (major ? 1500 : 2200) : (major ? 2000 : 2800)) * jitter; bp.Q.value = warm ? 1.1 : 1.4;
     const hp = a.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = warm ? 90 : 700;   // nothing below 700 Hz on a desktop: no thud, only the tick
@@ -738,7 +728,8 @@ window.BK = (() => {
     if (prefs.haptics) buzz(major);
   }
   window.__tick = tick;
-  addEventListener("pointerdown", () => { if (prefs.sound) { const a = ensure(); if (a && a.state !== "running") a.resume(); } }, { capture: true, passive: true });   // the first touch only wakes the context that is already there
+  // a browser only lets audio start after a gesture it counts as "activation": a mouse press, but on a touch screen only the lifting of the finger. So ask on every one of them.
+  ["pointerdown", "pointerup", "touchend", "click", "keydown"].forEach(ev => addEventListener(ev, () => { if (prefs.sound) { const a = ensure(); if (a && a.state !== "running") a.resume(); } }, { capture: true, passive: true }));
   setTimeout(() => { if (prefs.sound) ensure(); }, 150);   // made a moment after load, so the first touch only has to wake it
 
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => { if (m.media) m.dataset.media = m.media; });
@@ -755,13 +746,6 @@ window.BK = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const H = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k] === true ? "" : attrs[k]); } kids.forEach(c => e.append(c)); return e; };
-  // Android only: a timed step opens the Clock app with a timer set (Chrome's intent link; the Clock app then keeps the time, not this page)
-  const ANDROID = /Android/i.test(navigator.userAgent) && (() => { try { return window.self === window.top; } catch { return false; } })();
-  function clockBtn(s) {
-    const b = H("button", { type: "button", class: "timer", text: s.text, "aria-label": BK.tr("Add to Clock") + ": " + BK.tr(s.label) + " " + s.text });
-    b.onclick = () => { location.href = "intent:#Intent;action=android.intent.action.SET_TIMER;i.android.intent.extra.alarm.LENGTH=" + Math.round(s.hours * 3600) + ";S.android.intent.extra.alarm.MESSAGE=" + encodeURIComponent("Bake: " + BK.tr(s.label)) + ";B.android.intent.extra.alarm.SKIP_UI=false;end"; };
-    return b;
-  }
   const PX = { flour: 7, hydration: 22, pizzaHydration: 22, starterPct: 26, balls: 30, yeastPct: 14 };
   // each wheel has its own scale: pixels per step, a small tick every n steps, a tall tick every m steps
   const RL = { flour: [2, 10], hydration: [1, 5], pizzaHydration: [1, 5], starterPct: [1, 2], balls: [1, 4], yeastPct: [1, 10] };
@@ -872,7 +856,7 @@ window.BK = (() => {
     bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important"));
     while (fs > 30 && bigs.some(b => b.scrollWidth > b.clientWidth)) { fs -= 1; bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important")); }
     $("#plan").dataset.n = String(model.timeline.length);
-    $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), s.hours && ANDROID ? clockBtn(s) : H("span", { text: s.text }))));
+    $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), H("span", { text: s.text }))));
   }
 
   // First visit only: a quiet hint that the cards are wheels. The ruler of the first wheel drifts a little each way and a small caption fades in; the first touch ends it.
@@ -985,7 +969,7 @@ window.BK = (() => {
 <script>
 // A finger that slides a little still taps. The browser would call that a drag and drop the click, which felt like the button not responding.
 (() => {
-  const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo, #plan button";
+  const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo";
   let down = null, handled = null;
   document.addEventListener("pointerdown", e => { const b = e.target.closest && e.target.closest(SEL); down = b && !b.disabled ? { b, id: e.pointerId, t: performance.now() } : null; }, true);
   document.addEventListener("pointerup", e => {

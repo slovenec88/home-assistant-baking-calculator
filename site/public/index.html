@@ -117,7 +117,7 @@
   #dh .grip { width: 40px !important; height: 5px !important; border-radius: 3px !important; }
   body.sheet-open #drawer { box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.16) !important; }
   #drawer { border-top: 0 !important; }
-  main { padding-bottom: 70px !important; }
+  main { padding-bottom: 62px !important; }
   :root[data-theme="light"] { color-scheme: light; --bg: #e6e3db; --panel: #f3f1eb; --ink: #1d1d1b; --mid: #86827a; --line: #cdc9be; --dough: #ffe082; --on-dough: #3e2723; --crust: #6d4c41; --accent: #ffb300; --on-accent: #3e2723; }
   :root[data-theme="dark"] { color-scheme: dark; --bg: #141412; --panel: #1f1f1c; --ink: #eceae3; --mid: #8d897f; --line: #2d2d29; --dough: #ffd54f; --on-dough: #3e2723; --crust: #ffd54f; --accent: #ffd54f; --on-accent: #3e2723; }
   :root:not([data-theme]) { --dough: #ffe082; --on-dough: #3e2723; --crust: #6d4c41; --accent: #ffb300; --on-accent: #3e2723; }
@@ -167,6 +167,8 @@
   #out[data-hero="3"] .cell[data-id="flour"] { grid-row: span 2; align-content: center; }
   #out[data-hero="3"] .cell.hero.sm, #out[data-hero="3"] .cell.total { grid-column: 4 / span 3; }
   #inputs.fresh .ruler { transition: none !important; }   /* wheels that are built fresh appear in place, they do not slide in */
+  #tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo { touch-action: none; }   /* a slightly sliding tap must not turn into a page scroll that cancels it */
+  .dough-sr:not(:focus-within) { top: 0; left: 0; }   /* the hidden screen-reader controls sat 1px below the page and made it scroll */
   .num { cursor: default; }
 
 </style>
@@ -399,7 +401,7 @@ const Dough = (() => {
     el.addEventListener("pointermove", e => {
       if (!start || e.pointerId !== start.id || !start.k) return;
       const d = axis === "x" ? e.clientX - start.x : start.y - e.clientY;
-      if (!start.moved && Math.abs(d) < 5) return;
+      if (!start.moved && Math.abs(d) < 8) return;
       start.moved = true;
       const raw = d / pxPerStep(start.k), steps = Math.round(raw);
       if (steps !== start.last) { start.last = steps; set(start.k, start.v + steps * SPEC[start.k].drag); haptic(start.k, valueOf(start.k)); }
@@ -833,12 +835,12 @@ window.BK = (() => {
   dh.addEventListener("pointerdown", e => {
     if (e.button) return;
     const closedPx = drawer.offsetHeight - dh.offsetHeight, open = drawer.classList.contains("open");
-    drag = { id: e.pointerId, y0: e.clientY, ty0: open ? 0 : closedPx, closedPx, ty: open ? 0 : closedPx, moved: false, t: performance.now(), y: e.clientY, v: 0 };
+    drag = { maxDy: 0, id: e.pointerId, y0: e.clientY, ty0: open ? 0 : closedPx, closedPx, ty: open ? 0 : closedPx, moved: false, t: performance.now(), tStart: performance.now(), y: e.clientY, v: 0 };
     try { dh.setPointerCapture(e.pointerId); } catch {}
   });
   dh.addEventListener("pointermove", e => {
     if (!drag || e.pointerId !== drag.id) return;
-    const dy = e.clientY - drag.y0;
+    const dy = e.clientY - drag.y0; drag.maxDy = Math.max(drag.maxDy, Math.abs(dy));
     if (!drag.moved) { if (Math.abs(dy) < 6) return; drag.moved = true; drawer.classList.add("dragging"); }
     const now = performance.now(), dt = now - drag.t;
     if (dt > 0) drag.v = 0.8 * drag.v + 0.2 * ((e.clientY - drag.y) / dt);   // px per ms, positive = down
@@ -850,7 +852,8 @@ window.BK = (() => {
   const release = e => {
     if (!drag || e.pointerId !== drag.id) return;
     const d = drag; drag = null;
-    if (!d.moved) {
+    if (!d.moved || (d.maxDy < 22 && performance.now() - d.tStart < 450)) {
+      drawer.classList.remove("dragging"); drawer.style.removeProperty("--ty");
       // while the sheet is still sliding, the handle passes under the finger of someone already aiming for Save: that tap must not close it again
       if (performance.now() - changed < 400) return;
       setOpen(!drawer.classList.contains("open")); return;
@@ -885,6 +888,26 @@ window.BK = (() => {
   }
   Dough.recipes.subscribe(draw);
   BK.onChange(() => draw(Dough.recipes.list()));
+})();
+</script>
+<script>
+// A finger that slides a little still taps. The browser would call that a drag and drop the click, which felt like the button not responding.
+(() => {
+  const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo";
+  let down = null, handled = null;
+  document.addEventListener("pointerdown", e => { const b = e.target.closest && e.target.closest(SEL); down = b && !b.disabled ? { b, id: e.pointerId, t: performance.now() } : null; }, true);
+  document.addEventListener("pointerup", e => {
+    if (!down || e.pointerId !== down.id) return;
+    const d = down; down = null;
+    if (performance.now() - d.t > 900) return;
+    const r = d.b.getBoundingClientRect(), m = 24;
+    if (e.clientX < r.left - m || e.clientX > r.right + m || e.clientY < r.top - m || e.clientY > r.bottom + m) return;
+    handled = { b: d.b, t: performance.now() };
+    d.b.click();
+  }, true);
+  document.addEventListener("click", e => {   // the browser's own click for the same tap would count twice
+    if (e.isTrusted && e.detail > 0 && handled && performance.now() - handled.t < 700 && e.target.closest && e.target.closest(SEL) === handled.b) { e.stopImmediatePropagation(); e.preventDefault(); }
+  }, true);
 })();
 </script>
 </body>

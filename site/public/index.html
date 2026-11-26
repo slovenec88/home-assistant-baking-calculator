@@ -3,16 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dough Calculator</title>
+<title>Bake</title>
+<link rel="preload" href="/fonts/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   /* ---- recipe drawer (structure only; each style supplies colours and shape through its variables) ---- */
   main { padding-bottom: 48px; }
-  #drawer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; width: min(560px, 100%); margin: 0 auto; background: var(--bg); color: var(--ink); border-top: 2px solid var(--line); }
+  #drawer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; width: min(560px, 100%); margin: 0 auto; background: var(--bg); color: var(--ink); border-top: 2px solid var(--line); transform: translateY(var(--ty, calc(100% - var(--hh, 60px)))); transition: transform 280ms cubic-bezier(0.2, 0.9, 0.25, 1); will-change: transform; }
+  #drawer.open { --ty: 0px; } #drawer.dragging { transition: none; }
+  #drawer:not(.open):not(.dragging) #dbody { visibility: hidden; transition: visibility 0s 280ms; }
+  @media (prefers-reduced-motion: reduce) { #drawer { transition-duration: 1ms; } }
   #dh { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 44px; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; touch-action: none; }
   #dh .grip { width: 36px; height: 4px; border-radius: 2px; background: var(--mid, var(--muted, currentColor)); opacity: 0.6; }
   #dl { font-size: 0.875rem; font-weight: 600; }
   #dbody { display: grid; gap: 10px; padding: 4px 16px 16px; max-height: 56dvh; overflow: auto; }
-  #dbody[hidden] { display: none; }
   #dsave { display: flex; gap: 8px; }
   #dname { flex: 1; min-width: 0; height: 48px; padding: 0 12px; border: 2px solid var(--line); background: transparent; color: inherit; font: inherit; border-radius: inherit; }
   #dgo { height: 48px; padding: 0 18px; border: 0; background: var(--accent); color: var(--on-accent, #000); font: inherit; font-weight: 700; cursor: pointer; border-radius: inherit; }
@@ -99,18 +102,71 @@
 
   main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important; }
   #toprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
-  #toprow #dh { width: auto; height: auto; min-height: 40px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--panel); color: var(--ink); font-size: 0.875rem; font-weight: 600; box-shadow: 0 2px 0 var(--line); touch-action: manipulation; }
-  #toprow #dh .grip { display: none; }
-  #toprow #dh[aria-expanded="true"] { background: var(--ink); color: var(--bg); }
-  body.sheet-open #drawer { border-top: 2px solid var(--line); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12); }
+  #sb { width: 44px; border: 0; border-radius: 10px; background: var(--panel); color: var(--ink); display: grid; place-items: center; padding: 0; touch-action: manipulation; }
+  #sb[aria-expanded="true"] { background: var(--ink); color: var(--bg); }
+  main { position: relative; }
+  #settings { position: absolute; right: 12px; top: 58px; z-index: 50; width: min(300px, calc(100% - 24px)); display: grid; gap: 14px; padding: 14px; border-radius: 16px; background: var(--panel); box-shadow: 0 0 0 1px var(--line), 0 10px 30px rgba(0, 0, 0, 0.2); }
+  #settings[hidden] { display: none; }
+  #settings .lab { font-size: 0.8125rem; color: var(--mid); font-weight: 500; margin-bottom: 6px; }
+  .seg { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 12px; background: var(--bg); }
+  .seg button { height: 40px; border: 0; border-radius: 9px; background: none; color: var(--mid); font-size: 0.875rem; font-weight: 600; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  #settings .ver { margin: 0; font-size: 0.75rem; color: var(--mid); font-variant-numeric: tabular-nums; }
+  /* recipes: a bottom drawer again, with the handle lifted clear of the system back gesture */
+  #dh { height: auto !important; flex-direction: column; justify-content: flex-start !important; gap: 6px !important; padding: 10px 0 calc(env(safe-area-inset-bottom, 0px) + 22px) !important; }
+  #dh .grip { width: 40px !important; height: 5px !important; border-radius: 3px !important; }
+  body.sheet-open #drawer { box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.16) !important; }
   #drawer { border-top: 0 !important; }
-  #dbody { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px) !important; padding-top: 14px !important; }
+  main { padding-bottom: 70px !important; }
+  :root[data-theme="light"] { color-scheme: light; --bg: #e6e3db; --panel: #f3f1eb; --ink: #1d1d1b; --mid: #86827a; --line: #cdc9be; --dough: #ffe082; --on-dough: #3e2723; --crust: #6d4c41; --accent: #ffb300; --on-accent: #3e2723; }
+  :root[data-theme="dark"] { color-scheme: dark; --bg: #141412; --panel: #1f1f1c; --ink: #eceae3; --mid: #8d897f; --line: #2d2d29; --dough: #ffd54f; --on-dough: #3e2723; --crust: #ffd54f; --accent: #ffd54f; --on-accent: #3e2723; }
+  :root:not([data-theme]) { --dough: #ffe082; --on-dough: #3e2723; --crust: #6d4c41; --accent: #ffb300; --on-accent: #3e2723; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --dough: #ffd54f; --on-dough: #3e2723; --crust: #ffd54f; --accent: #ffd54f; --on-accent: #3e2723; } }
+  :focus-visible { outline-color: var(--ink) !important; }
+  #dbody { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px) !important; padding-top: 2px !important; }
   .in > div:first-child { display: block !important; }
   .in .lab { margin-bottom: 4px; }
   .in .pre { gap: 8px !important; }
   .pre button { height: 38px !important; min-width: 64px; padding: 0 16px !important; font-size: 0.9375rem !important; }
   .ruler { height: 24px !important; margin-top: 2px !important; cursor: ew-resize; opacity: 0.7 !important; }
   .ruler::after { height: 24px !important; }
+  #out { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+  #out .cell { grid-column: span 2; padding: 6px 12px !important; }
+  #out[data-small="2"] .cell { grid-column: span 3; }
+  #out .cell b { font-size: 24px !important; }
+  #out .cell.hero { grid-column: span 3; background: var(--dough); color: var(--on-dough); padding: 8px 16px !important; }
+  #out[data-hero="1"] .cell.hero:not(.sm) { grid-column: 1 / -1; }
+  #out .cell.hero.sm { grid-column: span 2; padding: 6px 12px !important; }
+  #out[data-small="2"] .cell.hero.sm { grid-column: span 3; }
+  #out .cell.hero.sm b { font-size: 24px !important; }
+  #out .cell.hero small { color: var(--on-dough); opacity: 0.75; }
+  #out .cell.hero b { font-size: 52px !important; }
+  #out .total { background: var(--panel) !important; color: var(--ink) !important; padding: 6px 12px !important; }
+  #out .total small { color: var(--mid) !important; opacity: 1 !important; } #out .total b { font-size: 24px !important; }
+  #plan { display: flex; list-style: none; margin: 0 !important; padding: 0 !important; background: var(--panel); border-radius: 14px; overflow: hidden; font-size: 0.8125rem !important; }
+  #plan li { flex: 1 1 0; min-width: 0; padding: 8px 6px 9px 10px; border-left: 1px solid var(--line); display: grid; gap: 1px; align-content: start; }
+  #plan li:first-child { border-left: 0; }
+  #plan small { font-size: 0.6875rem; color: var(--mid); font-variant-numeric: tabular-nums; }
+  #plan b { font-weight: 600; color: var(--ink); font-size: 0.8125rem; }
+  #plan span { color: var(--mid); font-size: 0.75rem; min-height: 1em; }
+  #plan li.cold span { color: var(--crust); font-weight: 600; }
+  #plan li { padding: 8px 4px 9px 8px !important; }
+  #plan[data-n="6"] b { font-size: 0.6875rem; letter-spacing: -0.01em; }
+  /* a slightly slanted swipe on a wheel must never pull the page down or refresh it */
+  html, body { overscroll-behavior: none; }
+  .in, .in .num, .in .ruler, #dh { touch-action: none !important; }
+  .in:not(.live) .ruler { transition: background-position 220ms cubic-bezier(0.2, 0.9, 0.25, 1); }
+  @media (prefers-reduced-motion: reduce) { .in:not(.live) .ruler { transition: none; } }
+  /* one typeface for the whole app: Atkinson Hyperlegible Next (OFL), served from /fonts */
+  @font-face { font-family: "Atkinson Hyperlegible Next"; font-style: normal; font-weight: 200 800; font-display: swap; src: url(/fonts/atkinson-hyperlegible-next-latin-ext.woff2) format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  @font-face { font-family: "Atkinson Hyperlegible Next"; font-style: normal; font-weight: 200 800; font-display: swap; src: url(/fonts/atkinson-hyperlegible-next-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  body, button, input, .dough-sr, .dough-sr * { font-family: "Atkinson Hyperlegible Next", system-ui, sans-serif !important; }
+  body *, .num, #out .cell b, #plan small { font-variant-numeric: normal !important; }   /* this face has very wide tabular figures; its normal ones fit the cards */
+  /* pizza: water, leavening and flour are the three big cards; salt and total stack beside the flour */
+  #out .cell.hero:not(.sm) b { white-space: nowrap; }
+  #out[data-hero="3"] .cell[data-id="flour"] { grid-row: span 2; align-content: center; }
+  #out[data-hero="3"] .cell.hero.sm, #out[data-hero="3"] .cell.total { grid-column: 4 / span 3; }
+  #inputs.fresh .ruler { transition: none !important; }   /* wheels that are built fresh appear in place, they do not slide in */
   .num { cursor: default; }
 
 </style>
@@ -119,16 +175,18 @@
 <main>
   <div id="toprow">
     <nav id="tabs" role="tablist" aria-label="Dough type"></nav>
-    <button id="dh" type="button" aria-expanded="false" aria-controls="dbody"><span class="grip" aria-hidden="true"></span><span id="dl">Recipes</span></button>
+    <button id="sb" type="button" aria-expanded="false" aria-controls="settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
+  <div id="settings" hidden></div>
   <div id="bar" role="img" aria-label="Proportions of the dough"></div>
   <section id="inputs"></section>
   <div id="choices"></div>
   <section id="out" aria-live="polite"></section>
-  <p id="plan"></p>
+  <ol id="plan"></ol>
 </main>
 <aside id="drawer" aria-label="Saved recipes">
-  <div id="dbody" hidden>
+  <button id="dh" type="button" aria-expanded="false" aria-controls="dbody"><span class="grip" aria-hidden="true"></span><span id="dl">Recipes</span></button>
+  <div id="dbody" inert>
     <form id="dsave"><input id="dname" type="text" maxlength="40" aria-label="Recipe name" placeholder="Name this recipe" autocomplete="off"><button id="dgo" type="submit">Save</button></form>
     <p id="dnote" hidden>Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.</p>
     <ul id="dlist"></ul>
@@ -314,7 +372,10 @@ const Dough = (() => {
   }
   function choose(key, val) {
     if (key === "mode") state.mode = val;
-    else { state.pizza = { ...pizzaValues(), instantYeastPct: { ...pizzaValues().instantYeastPct } }; state.pizza[key] = val; }
+    else { state.pizza = { ...pizzaValues(), instantYeastPct: { ...pizzaValues().instantYeastPct } }; const changed = state.pizza[key] !== val; state.pizza[key] = val;
+      // going from next day to same day (or back) starts the yeast amount again from that proof's saved preset
+      if (key === "proof" && changed) state.pizza.instantYeastPct[val] = DEFAULTS.pizza.instantYeastPct[val];
+    }
     emit();
   }
 
@@ -324,12 +385,12 @@ const Dough = (() => {
   const fmtVal = f => fmtNum(f.value, f.dec) + (f.unit ? (f.unit === "g" ? " g" : f.unit) : "");
 
   /* ---- drag helper: pointer drags change a field in whole steps; a short press is a tap ---- */
-  const haptic = () => { try { navigator.vibrate && navigator.vibrate(6); } catch {} };
-  function drag(el, { key, axis = "x", pxPerStep = 10, onTap, onStart, onEnd, target }) {
+  const haptic = (key, val) => { if (window.__tick) return window.__tick(key, val); try { navigator.vibrate && navigator.vibrate(6); } catch {} };
+  function drag(el, { key, axis = "x", pxPerStep = 10, onTap, onStart, onEnd, onMove, target, ignore }) {
     let start = null;
     el.style.touchAction = axis === "x" ? "pan-y" : "pan-x";
     el.addEventListener("pointerdown", e => {
-      if (e.button) return;
+      if (e.button || (ignore && ignore(e))) return;
       const k = typeof key === "function" ? key(e) : key;
       start = { id: e.pointerId, x: e.clientX, y: e.clientY, k, v: k ? valueOf(k) : 0, last: 0, moved: false };
       try { el.setPointerCapture(e.pointerId); } catch {}
@@ -340,8 +401,9 @@ const Dough = (() => {
       const d = axis === "x" ? e.clientX - start.x : start.y - e.clientY;
       if (!start.moved && Math.abs(d) < 5) return;
       start.moved = true;
-      const steps = Math.round(d / pxPerStep(start.k));
-      if (steps !== start.last) { start.last = steps; set(start.k, start.v + steps * SPEC[start.k].drag); haptic(); }
+      const raw = d / pxPerStep(start.k), steps = Math.round(raw);
+      if (steps !== start.last) { start.last = steps; set(start.k, start.v + steps * SPEC[start.k].drag); haptic(start.k, valueOf(start.k)); }
+      onMove && onMove(raw - steps, start.k);   // the part of a step between two values, so a wheel can follow the finger smoothly
     });
     const end = e => {
       if (!start || e.pointerId !== start.id) return;
@@ -495,16 +557,161 @@ Dough.recipes = (() => {
 
 </script>
 <script>
+/* Bake: language, theme and version. Settings live in this browser only. */
+window.BK = (() => {
+  const VERSION = "1.3.0";
+  const SL = {
+    "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
+    "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
+    "Same day": "Isti dan", "Next day": "Naslednji dan", "Water": "Voda", "Salt": "Sol", "Total dough": "Teža testa",
+    "Mix": "Mešaj", "Rest": "Počitek", "Basket": "Košara", "Bake": "Peka", "Divide": "Delitev", "Double": "Vzhaja", "Chill": "Hladi",
+    "Sourdough bread": "Kruh z drožmi", "Instant yeast bread": "Kruh s kvasom", "Neapolitan pizza": "Neapeljska pica",
+    "Name this recipe": "Poimenuj recept", "Recipe name": "Ime recepta", "Save": "Shrani", "Saved": "Shranjeno", "Saved for this session": "Shranjeno za to sejo",
+    "No saved recipes.": "Ni shranjenih receptov.", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
+    "Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.": "Brskalnik v tem pogledu blokira shranjevanje, zato recepti obstanejo le do zaprtja strani. Odpri stran v navadnem zavihku, da jih obdržiš.",
+    "Dough type": "Vrsta testa", "Proportions of the dough": "Razmerja v testu",
+    "Settings": "Nastavitve", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
+  };
+  const KEY = "dough-ratio-assistant:settings:v1";
+  const prefs = { lang: null, theme: "system", sound: true, haptics: true };
+  try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch {}
+  const guess = () => /^sl\b/i.test(navigator.language || "") ? "sl" : "en";
+  let lang = prefs.lang === "sl" || prefs.lang === "en" ? prefs.lang : guess();
+  const subs = [];
+  const tr = s => (lang === "sl" && SL[s]) || s;
+  const loc = s => lang === "sl" ? String(s).replace(".", ",") : String(s);   // decimals only: the input is always a plain JS number string
+  const grp = (i, sep) => i.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+  const g = x => {
+    const v = x < 10 ? Math.round(x * 10) / 10 : Math.round(x), [i, d] = String(v).split(".");
+    return (lang === "sl" ? (i.length >= 5 ? grp(i, ".") : i) : grp(i, ",")) + (d ? (lang === "sl" ? "," : ".") + d : "") + " g";
+  };
+  const n = (v, d) => loc(Dough.fmtNum(v, d));
+  const unit = u => lang === "sl" && u === "%" ? " %" : u;
+  // typed numbers: "1.200" and "1,5" both mean what a Slovenian reader expects
+  const parse = s => { s = String(s).trim().replace(/\s/g, ""); if (s.includes(",")) s = s.replace(/\./g, "").replace(",", "."); else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ""); return parseFloat(s); };
+  function summary(snap) {
+    if (lang !== "sl") return Dough.recipes.summary(snap);
+    if (snap.mode === "pizza") { const p = snap.pizza, k = p.balls; return `Pica, ${k} ${k % 100 === 1 || (k % 10 === 1 && k > 100) ? "hlebček" : k % 100 === 2 ? "hlebčka" : k % 100 === 3 || k % 100 === 4 ? "hlebčki" : "hlebčkov"}, ${p.hydration} %, ${p.yeastType === "sourdough" ? "droži" : "kvas"}, ${p.proof === "nextDay" ? "naslednji dan" : "isti dan"}`; }
+    const c = snap[snap.mode];
+    return `${snap.mode === "sourdough" ? "Kruh z drožmi" : "Kruh s kvasom"}, ${loc(c.flour)} g, ${c.hydration} %` + (snap.mode === "sourdough" ? `, ${loc(snap.sourdough.starterPct)} % drož` : "");
+  }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch {} };
+  const root = document.documentElement;
+  function applyTheme() { if (prefs.theme === "light" || prefs.theme === "dark") root.dataset.theme = prefs.theme; else delete root.dataset.theme; }
+  const $ = s => document.querySelector(s);
+  function applyStatic() {
+    root.lang = lang;
+    $("#tabs").setAttribute("aria-label", tr("Dough type")); $("#bar").setAttribute("aria-label", tr("Proportions of the dough"));
+    $("#drawer").setAttribute("aria-label", tr("Saved recipes")); $("#dname").setAttribute("aria-label", tr("Recipe name")); $("#dname").placeholder = tr("Name this recipe");
+    $("#dgo").textContent = tr("Save"); $("#dnote").textContent = tr("Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.");
+    $("#sb").setAttribute("aria-label", tr("Settings")); $("#settings").setAttribute("aria-label", tr("Settings"));
+  }
+  function seg(label, options, current, pick) {
+    const wrap = document.createElement("div"); wrap.className = "set";
+    const l = document.createElement("div"); l.className = "lab"; l.textContent = label;
+    const grp = document.createElement("div"); grp.className = "seg"; grp.setAttribute("role", "group"); grp.setAttribute("aria-label", label); grp.style.setProperty("--n", options.length);
+    options.forEach(([v, t]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.setAttribute("aria-pressed", String(v === current)); b.onclick = () => pick(v); grp.append(b); });
+    wrap.append(l, grp); return wrap;
+  }
+  function drawSettings() {
+    const el = $("#settings"); el.replaceChildren(
+      seg(tr("Language"), [["en", "English"], ["sl", "Slovenščina"]], lang, v => setLang(v)),
+      seg(tr("Theme"), [["system", tr("System")], ["light", tr("Light")], ["dark", tr("Dark")]], prefs.theme, v => setTheme(v)),
+      seg(tr("Sound"), [["1", tr("On")], ["0", tr("Off")]], prefs.sound ? "1" : "0", v => { prefs.sound = v === "1"; save(); drawSettings(); if (prefs.sound) tick("flour", 100); }),
+      seg(tr("Haptics"), [["1", tr("On")], ["0", tr("Off")]], prefs.haptics ? "1" : "0", v => { prefs.haptics = v === "1"; save(); drawSettings(); if (prefs.haptics) tick("flour", 100); }));
+    const ver = document.createElement("p"); ver.className = "ver"; ver.textContent = `${tr("Version")} ${VERSION}`; el.append(ver);
+  }
+  function setLang(v) { lang = v; prefs.lang = v; save(); applyStatic(); drawSettings(); subs.forEach(f => f()); }
+  function setTheme(v) { prefs.theme = v; save(); applyTheme(); drawSettings(); }
+  function open(o) { $("#settings").hidden = !o; $("#sb").setAttribute("aria-expanded", String(o)); }
+  /* ---- clicks: a short mechanical tick for every step of a wheel, a heavier one on the round numbers ---- */
+  let ac = null, last = 0, iosSwitch = null;
+  const MAJOR = { flour: 100, hydration: 5, pizzaHydration: 5, starterPct: 5, balls: 4, yeastPct: 0.5 };
+  let master = null, voices = 0, lastBody = 0;
+  function audio() {
+    if (!ac) {
+      try {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        // everything goes through one gain and a limiter, so a burst of ticks can never add up into a thud
+        master = ac.createGain(); master.gain.value = 0.6;
+        const lim = ac.createDynamicsCompressor(); lim.threshold.value = -14; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.001; lim.release.value = 0.06;
+        master.connect(lim).connect(ac.destination);
+      } catch { ac = false; }
+    }
+    if (ac && ac.state === "suspended") ac.resume();
+    return ac;
+  }
+  function click(major) {
+    const a = audio();
+    // a context that is still suspended queues everything and then plays it at once, which is the loud thud: drop those ticks instead
+    if (!a || a.state !== "running" || voices >= 5) return;
+    const t = a.currentTime + 0.005, jitter = 1 + (Math.random() - 0.5) * 0.08;
+    const len = Math.floor(a.sampleRate * 0.03), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3) * Math.min(1, i / 24);   // a decaying noise burst is the "tick"; the first samples fade in so it starts without a pop
+    const src = a.createBufferSource(); src.buffer = buf; voices++; src.onended = () => { voices = Math.max(0, voices - 1); };
+    const bp = a.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = (major ? 1500 : 2200) * jitter; bp.Q.value = 1.1;
+    const g = a.createGain(); g.gain.setValueAtTime(major ? 0.42 : 0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + (major ? 0.05 : 0.03));
+    src.connect(bp).connect(g).connect(master); src.start(t);
+    // a small low body under the click, but never stacked: at most one every 60 ms, and only a little
+    if (major || t - lastBody > 0.06) {
+      lastBody = t;
+      const o = a.createOscillator(), og = a.createGain();
+      // a triangle wave: phone speakers cannot play the low note itself, but its upper harmonics make the click sound deep, in a browser and in a WebView alike
+      o.type = "triangle"; o.frequency.setValueAtTime((major ? 190 : 250) * jitter, t); o.frequency.exponentialRampToValueAtTime(95, t + 0.05);
+      og.gain.setValueAtTime(0.0001, t); og.gain.linearRampToValueAtTime(major ? 0.22 : 0.12, t + 0.003); og.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      o.connect(og).connect(master); o.start(t); o.stop(t + 0.07);
+    }
+  }
+  function buzz(major) {
+    if (navigator.vibrate) { try { navigator.vibrate(major ? 16 : 7); } catch {} return; }
+    // iOS Safari has no vibrate(); toggling a switch input gives a light haptic tap there (17.4 and later)
+    if (!iosSwitch) { const l = document.createElement("label"); l.setAttribute("aria-hidden", "true"); l.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none"; const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("switch", ""); i.tabIndex = -1; l.append(i); document.body.append(l); iosSwitch = l; }
+    iosSwitch.click();
+  }
+  function tick(key, val) {
+    const now = performance.now(); if (now - last < 14) return; last = now;
+    const m = MAJOR[key], major = !!m && Math.abs(val / m - Math.round(val / m)) < 1e-6;
+    if (prefs.sound) click(major);
+    if (prefs.haptics) buzz(major);
+  }
+  window.__tick = tick;
+  addEventListener("pointerdown", () => { if (prefs.sound) audio(); }, { capture: true, passive: true });   // unlock audio on the first touch
+
+  applyTheme(); applyStatic(); drawSettings();
+  $("#sb").addEventListener("click", () => open($("#settings").hidden));
+  document.addEventListener("pointerdown", e => { if (!$("#settings").hidden && !e.target.closest("#settings, #sb")) open(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#settings").hidden) { open(false); $("#sb").focus(); } });
+  return { VERSION, tick, tr, loc, g, n, unit, parse, summary, onChange: f => subs.push(f), get lang() { return lang; } };
+})();
+
+</script>
+<script>
 (() => {
   const $ = s => document.querySelector(s);
   const H = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k] === true ? "" : attrs[k]); } kids.forEach(c => e.append(c)); return e; };
-  const PX = { flour: 3, hydration: 10, pizzaHydration: 10, starterPct: 12, balls: 30, yeastPct: 6 };
+  const PX = { flour: 7, hydration: 22, pizzaHydration: 22, starterPct: 26, balls: 30, yeastPct: 14 };
+  // each wheel has its own scale: pixels per step, a small tick every n steps, a tall tick every m steps
+  const RL = { flour: [2, 10], hydration: [1, 5], pizzaHydration: [1, 5], starterPct: [1, 2], balls: [1, 4], yeastPct: [1, 10] };
+  const frac = {};
+  function rulerStyle(ruler, key) {
+    const px = PX[key] || 10, [mi, ma] = RL[key] || [1, 5];
+    ruler.style.backgroundImage = "linear-gradient(90deg, var(--ink) 0 1px, transparent 1px), linear-gradient(90deg, var(--ink) 0 2px, transparent 2px)";
+    ruler.style.backgroundSize = `${px * mi}px 55%, ${px * ma}px 100%`; ruler.style.backgroundRepeat = "repeat-x";
+  }
+  function rulerPos(row, f) {
+    const ruler = row.querySelector(".ruler"), px = PX[f.key] || 10, x = (ruler.clientWidth || 300) / 2 - (f.value / f.drag + (frac[f.key] || 0)) * px;
+    // a jump of more than a screen (a preset that resets the value) lands in place instead of sliding past every tick
+    const far = ruler._x != null && Math.abs(x - ruler._x) > (ruler.clientWidth || 300) * 0.9; ruler._x = x;
+    if (far) ruler.style.transition = "none";
+    ruler.style.backgroundPosition = `${x}px 100%, ${x}px 100%`;
+    if (far) { void ruler.offsetWidth; ruler.style.transition = ""; }
+  }
   let m = null, structKey = "";
   Dough.a11y();
 
   // Bread and Pizza are the two top tabs. Sourdough or yeast is a choice inside each, so bread has it too, just like pizza.
   function groupsOf(model) {
-    if (model.mode === "pizza") return model.choices.map(c => ({ ...c, apply: v => Dough.choose(c.key, v) }));
+    if (model.mode === "pizza") return model.choices.map(c => ({ ...c, options: c.key === "yeastType" ? [...c.options].sort((a, b) => (b[0] === "sourdough") - (a[0] === "sourdough")) : c.options, apply: v => Dough.choose(c.key, v) }));
     return [{ label: "Leavening", options: [["sourdough", "Sourdough"], ["instant", "Yeast"]], value: model.mode, apply: v => switchBread(v) }];
   }
   function switchBread(to) {
@@ -518,20 +725,21 @@ Dough.recipes = (() => {
   }
   function build(model) {
     const isPizza = model.mode === "pizza";
-    $("#tabs").replaceChildren(...[["bread", "Bread"], ["pizza", "Pizza"]].map(([v, l]) => H("button", { type: "button", role: "tab", text: l, "aria-selected": String((v === "pizza") === isPizza), onclick: () => goTop(v) })));
+    $("#tabs").replaceChildren(...[["bread", "Bread"], ["pizza", "Pizza"]].map(([v, l]) => H("button", { type: "button", role: "tab", text: BK.tr(l), "aria-selected": String((v === "pizza") === isPizza), onclick: () => goTop(v) })));
     const inputs = $("#inputs"); inputs.replaceChildren();
     model.fields.forEach(f => {
-      const num = H("button", { type: "button", class: "num", role: "spinbutton", "aria-label": f.label, "aria-valuenow": f.value, "aria-valuemin": f.min, "aria-valuemax": f.max, "data-key": f.key });
+      const num = H("button", { type: "button", class: "num", role: "spinbutton", "aria-label": BK.tr(f.label), "aria-valuenow": f.value, "aria-valuemin": f.min, "aria-valuemax": f.max, "data-key": f.key });
       const val = H("span", { class: "val" }), unit = H("small", { text: f.unit });
       num.append(val, unit);
       const ruler = H("div", { class: "ruler", "aria-hidden": "true" });
-      const px = PX[f.key] || 10, every = Math.ceil(8 / px);
-      ruler.style.backgroundImage = `repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px ${px * every}px)`;
-      const pre = H("div", { class: "pre" }, ...f.presets.map(p => H("button", { type: "button", "data-p": p, text: p + (f.unit === "g" ? " g" : f.unit), onclick: () => Dough.set(f.key, p) })));
-      const row = H("div", { class: "in", "data-key": f.key }, H("div", {}, H("div", { class: "lab", text: f.label }), pre), num, ruler);
+      rulerStyle(ruler, f.key);
+      const pre = H("div", { class: "pre" }, ...f.presets.map(p => H("button", { type: "button", "data-p": p, text: p + (f.unit === "g" ? " g" : BK.unit(f.unit)), onclick: () => { Dough.set(f.key, p); BK.tick(f.key, p); } })));
+      const row = H("div", { class: "in", "data-key": f.key }, H("div", {}, H("div", { class: "lab", text: BK.tr(f.label) }), pre), num, ruler);
       inputs.append(row);
-      Dough.drag(num, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onTap: () => edit(num, f) });
-      Dough.drag(ruler, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onStart: () => row.classList.add("live"), onEnd: () => row.classList.remove("live") });
+      Dough.drag(num, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onTap: () => edit(num, f), onStart: () => row.classList.add("live"), onMove: r => { const cur = valueOf(f.key); frac[f.key] = cur <= f.min || cur >= f.max ? 0 : r; rulerPos(row, { key: f.key, drag: f.drag, value: cur }); }, onEnd: () => { row.classList.remove("live"); frac[f.key] = 0; rulerPos(row, { key: f.key, drag: f.drag, value: valueOf(f.key) }); } });
+      Dough.drag(ruler, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, onStart: () => row.classList.add("live"), onMove: r => { const cur = valueOf(f.key); frac[f.key] = cur <= f.min || cur >= f.max ? 0 : r; rulerPos(row, { key: f.key, drag: f.drag, value: cur }); }, onEnd: () => { row.classList.remove("live"); frac[f.key] = 0; rulerPos(row, { key: f.key, drag: f.drag, value: valueOf(f.key) }); } });
+      // the whole card is a wheel: the empty parts of it drag too, only the chips and the number keep their own taps
+      Dough.drag(row, { key: f.key, axis: "x", pxPerStep: () => PX[f.key] || 10, ignore: e => !!e.target.closest(".pre button, .num, .ruler"), onStart: () => row.classList.add("live"), onMove: r => { const cur = valueOf(f.key); frac[f.key] = cur <= f.min || cur >= f.max ? 0 : r; rulerPos(row, { key: f.key, drag: f.drag, value: cur }); }, onEnd: () => { row.classList.remove("live"); frac[f.key] = 0; rulerPos(row, { key: f.key, drag: f.drag, value: valueOf(f.key) }); } });
       num.addEventListener("keydown", e => {
         const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
         if (dir) { e.preventDefault(); Dough.step(f.key, dir); }
@@ -540,16 +748,16 @@ Dough.recipes = (() => {
     });
     const groups = groupsOf(model);
     const ch = $("#choices"); ch.hidden = !groups.length; ch.replaceChildren();
-    groups.forEach(g => ch.append(H("div", { class: "grp", role: "group", "aria-label": g.label },
-      ...g.options.map(([v, l]) => H("button", { type: "button", text: l === "Instant yeast" ? "Yeast" : l, "data-v": v, "aria-pressed": String(g.value === v), onclick: () => g.apply(v) })))));
+    groups.forEach(g => ch.append(H("div", { class: "grp", role: "group", "aria-label": BK.tr(g.label) },
+      ...g.options.map(([v, l]) => H("button", { type: "button", text: BK.tr(l === "Instant yeast" ? "Yeast" : l), "data-v": v, "aria-pressed": String(g.value === v), onclick: () => g.apply(v) })))));
   }
 
   function edit(num, f) {
     const val = num.querySelector(".val"); if (num.querySelector("input")) return;
-    const input = H("input", { type: "text", inputmode: "decimal", "aria-label": f.label, value: Dough.fmtNum(valueOf(f.key), f.dec) });
+    const input = H("input", { type: "text", inputmode: "decimal", "aria-label": BK.tr(f.label), value: BK.n(valueOf(f.key), f.dec) });
     input.style.width = "4.2ch";
     val.replaceChildren(input); input.focus(); input.select();
-    const done = () => { const v = parseFloat(input.value.replace(",", ".")); if (Number.isFinite(v)) Dough.set(f.key, v); else paint(m); };
+    const done = () => { const v = BK.parse(input.value); if (Number.isFinite(v)) Dough.set(f.key, v); else paint(m); };
     input.addEventListener("blur", done);
     input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = ""; input.blur(); } });
     input.addEventListener("pointerdown", e => e.stopPropagation());
@@ -561,69 +769,114 @@ Dough.recipes = (() => {
     model.fields.forEach(f => {
       const row = $(`.in[data-key="${f.key}"]`); if (!row) return;
       const val = row.querySelector(".val");
-      if (!val.querySelector("input")) val.textContent = Dough.fmtNum(f.value, f.dec);
+      if (!val.querySelector("input")) val.textContent = BK.n(f.value, f.dec);
       row.querySelector(".num").setAttribute("aria-valuenow", f.value);
-      row.querySelector(".ruler").style.backgroundPositionX = `${-(f.value / f.drag) * (PX[f.key] || 10)}px`;
+      rulerPos(row, f);
       row.querySelectorAll(".pre button").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.p) === f.value)));
     });
-    groupsOf(model).forEach(g => document.querySelectorAll(`#choices [role=group][aria-label="${g.label}"] button`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === g.value))));
+    groupsOf(model).forEach(g => document.querySelectorAll(`#choices [role=group][aria-label="${BK.tr(g.label)}"] button`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === g.value))));
 
     // proportion bar
     const bar = $("#bar");
     if (bar.children.length !== model.parts.length || [...bar.children].some((s, i) => s.dataset.id !== model.parts[i].id)) {
-      bar.replaceChildren(...model.parts.map(p => H("span", { "data-id": p.id, text: p.label })));
+      bar.replaceChildren(...model.parts.map(p => H("span", { "data-id": p.id, text: BK.tr(p.label) })));
     }
-    model.parts.forEach((p, i) => { const s = bar.children[i]; s.style.flexGrow = p.g; s.style.flexBasis = "0"; s.textContent = p.g / model.total > 0.07 ? p.label : ""; });
+    model.parts.forEach((p, i) => { const s = bar.children[i]; s.style.flexGrow = p.g; s.style.flexBasis = "0"; s.textContent = p.g / model.total > 0.07 ? BK.tr(p.label) : ""; });
 
     // outputs
     const out = $("#out"); out.replaceChildren();
-    model.parts.filter(p => model.mode === "pizza" || p.id !== "flour").forEach(p => out.append(H("div", { class: "cell", "data-id": p.id }, H("small", { text: p.label === "Yeast" ? "Instant yeast" : p.label }), H("b", { text: Dough.fmtG(p.g) }))));
-    out.append(H("div", { class: "cell", "data-id": "hyd" }, H("small", { text: "Final hydration" }), H("b", { text: Dough.fmtNum(model.finalHydration, 1) + "%" })));
-    out.append(H("div", { class: "cell total" }, H("small", { text: "Total dough" }), H("b", { text: Dough.fmtG(model.total) })));
-    $("#plan").textContent = model.plan;
+    // Water, starter or yeast, and salt are what you pour and scoop, so they are highlighted; water and the leavening lead. Total comes last.
+    const shown = model.parts.filter(p => model.mode === "pizza" || p.id !== "flour");
+    const big = p => p.id === "water" || p.id === "starter" || p.id === "yeast" || (model.mode === "pizza" && p.id === "flour");   // pizza also leads with its flour
+    const hero = shown.filter(big).sort((a, b) => (a.id === "flour") - (b.id === "flour")), rest = shown.filter(p => !hero.includes(p));
+    out.dataset.hero = String(hero.length);
+    out.dataset.small = String((rest.length + 1) % 3 === 0 ? 3 : 2);
+    hero.forEach(p => out.append(H("div", { class: "cell hero", "data-id": p.id }, H("small", { text: BK.tr(p.label) }), H("b", { text: BK.g(p.g) }))));
+    rest.forEach(p => out.append(H("div", { class: p.id === "salt" ? "cell hero sm" : "cell", "data-id": p.id }, H("small", { text: BK.tr(p.label === "Yeast" ? "Instant yeast" : p.label) }), H("b", { text: BK.g(p.g) }))));
+    out.append(H("div", { class: "cell total" }, H("small", { text: BK.tr("Total dough") }), H("b", { text: BK.g(model.total) })));
+    // the big cards share one text size; if the widest amount does not fit, they all shrink together
+    const bigs = [...out.querySelectorAll(".cell.hero:not(.sm) b")]; let fs = 52;
+    bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important"));
+    while (fs > 30 && bigs.some(b => b.scrollWidth > b.clientWidth)) { fs -= 1; bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important")); }
+    $("#plan").dataset.n = String(model.timeline.length);
+    $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), H("span", { text: s.text }))));
   }
 
   Dough.subscribe(model => {
-    const key = model.mode + "|" + model.fields.map(f => f.key).join() + "|" + model.choices.map(c => c.value).join();
-    if (key !== structKey) { structKey = key; build(model); }
+    // only a change in which wheels exist rebuilds them; picking Same day or Kvas just updates the values, so the other wheels stay still
+    const key = model.mode + "|" + model.fields.map(f => f.key).join();
+    const fresh = key !== structKey;
+    if (fresh) { structKey = key; $("#inputs").classList.add("fresh"); build(model); }
     paint(model);
+    if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => $("#inputs").classList.remove("fresh")));
   });
+  BK.onChange(() => { if (m) { build(m); paint(m); } });
 })();
 </script>
 <script>
 (() => {
   const $ = s => document.querySelector(s), dh = $("#dh"), body = $("#dbody"), vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
-  let skip = false, y0 = null, flash = 0, confirmId = null, confirmT = 0;
+  let flash = 0, confirmId = null, confirmT = 0;
+  const drawer = $("#drawer");
   function setOpen(o) {
-    body.hidden = !o; dh.setAttribute("aria-expanded", String(o)); document.body.classList.toggle("sheet-open", o);
-    if (o) { const m = Dough.model(); const f = m.fields[0]; $("#dname").placeholder = m.title + ", " + Dough.fmtVal(f); }
+    drawer.classList.toggle("open", o); body.inert = !o; dh.setAttribute("aria-expanded", String(o)); document.body.classList.toggle("sheet-open", o);
+    if (o) { const m = Dough.model(); const f = m.fields[0]; $("#dname").placeholder = BK.tr(m.title) + ", " + BK.loc(Dough.fmtVal(f)); }
   }
-  dh.addEventListener("pointerdown", e => { y0 = e.clientY; try { dh.setPointerCapture(e.pointerId); } catch {} });
-  dh.addEventListener("pointerup", e => { if (y0 == null) return; const d = y0 - e.clientY; y0 = null; if (Math.abs(d) > 24) { setOpen(d > 0); skip = true; } });
-  dh.addEventListener("click", () => { if (skip) { skip = false; return; } setOpen(body.hidden); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !body.hidden) setOpen(false); });
+  const measure = () => drawer.style.setProperty("--hh", dh.offsetHeight + "px");
+  measure(); addEventListener("resize", measure); if (window.ResizeObserver) new ResizeObserver(measure).observe(dh);
+  // the sheet follows the finger; where it lets go decides, a quick flick wins over position, and a tap toggles
+  let drag = null;
+  dh.addEventListener("pointerdown", e => {
+    if (e.button) return;
+    const closedPx = drawer.offsetHeight - dh.offsetHeight, open = drawer.classList.contains("open");
+    drag = { id: e.pointerId, y0: e.clientY, ty0: open ? 0 : closedPx, closedPx, ty: open ? 0 : closedPx, moved: false, t: performance.now(), y: e.clientY, v: 0 };
+    try { dh.setPointerCapture(e.pointerId); } catch {}
+  });
+  dh.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dy = e.clientY - drag.y0;
+    if (!drag.moved) { if (Math.abs(dy) < 6) return; drag.moved = true; drawer.classList.add("dragging"); }
+    const now = performance.now(), dt = now - drag.t;
+    if (dt > 0) drag.v = 0.8 * drag.v + 0.2 * ((e.clientY - drag.y) / dt);   // px per ms, positive = down
+    drag.t = now; drag.y = e.clientY;
+    const over = drag.ty0 + dy;
+    drag.ty = over < 0 ? over * 0.25 : over > drag.closedPx ? drag.closedPx + (over - drag.closedPx) * 0.25 : over;   // a little give past the ends
+    drawer.style.setProperty("--ty", drag.ty + "px");
+  });
+  const release = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (!d.moved) { setOpen(!drawer.classList.contains("open")); return; }
+    const goOpen = Math.abs(d.v) > 0.35 ? d.v < 0 : d.ty < d.closedPx / 2;
+    drawer.classList.remove("dragging"); void drawer.offsetHeight;
+    drawer.style.removeProperty("--ty"); setOpen(goOpen); if (goOpen !== (d.ty0 === 0)) vib(8);
+  };
+  dh.addEventListener("pointerup", release); dh.addEventListener("pointercancel", release);
+  dh.addEventListener("keydown", e => { if (e.key === "ArrowUp") { e.preventDefault(); setOpen(true); } if (e.key === "ArrowDown") { e.preventDefault(); setOpen(false); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && drawer.classList.contains("open")) setOpen(false); });
   $("#dsave").addEventListener("submit", e => {
     e.preventDefault(); const m = Dough.model();
-    const name = $("#dname").value.trim() || (m.title + ", " + Dough.fmtVal(m.fields[0]));
+    const name = $("#dname").value.trim() || (BK.tr(m.title) + ", " + BK.loc(Dough.fmtVal(m.fields[0])));
     Dough.recipes.save(name); $("#dname").value = ""; vib(10);
-    $("#dl").textContent = Dough.recipes.persistent() ? "Saved" : "Saved for this session"; clearTimeout(flash); flash = setTimeout(() => draw(Dough.recipes.list()), 1500);
+    $("#dl").textContent = BK.tr(Dough.recipes.persistent() ? "Saved" : "Saved for this session"); clearTimeout(flash); flash = setTimeout(() => draw(Dough.recipes.list()), 1500);
   });
   function draw(list) {
-    $("#dl").textContent = list.length ? `Recipes (${list.length})` : "Recipes";
+    $("#dl").textContent = list.length ? `${BK.tr("Recipes")} (${list.length})` : BK.tr("Recipes");
     $("#dnote").hidden = Dough.recipes.persistent();
     const ul = $("#dlist"); ul.replaceChildren();
-    if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No saved recipes."; ul.append(li); return; }
+    if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = BK.tr("No saved recipes."); ul.append(li); return; }
     list.forEach(r => {
       const li = document.createElement("li");
-      const t = document.createElement("div"); const b = document.createElement("b"); b.textContent = r.name; const s = document.createElement("span"); s.textContent = Dough.recipes.summary(r.snap); t.append(b, s);
-      const load = document.createElement("button"); load.type = "button"; load.className = "load"; load.textContent = "Load"; load.setAttribute("aria-label", "Load " + r.name);
+      const t = document.createElement("div"); const b = document.createElement("b"); b.textContent = r.name; const s = document.createElement("span"); s.textContent = BK.summary(r.snap); t.append(b, s);
+      const load = document.createElement("button"); load.type = "button"; load.className = "load"; load.textContent = BK.tr("Load"); load.setAttribute("aria-label", BK.tr("Load") + " " + r.name);
       load.onclick = () => { Dough.recipes.load(r.id); setOpen(false); vib(10); };
-      const del = document.createElement("button"); del.type = "button"; del.textContent = confirmId === r.id ? "Sure?" : "Delete"; del.setAttribute("aria-label", "Delete " + r.name);
+      const del = document.createElement("button"); del.type = "button"; del.textContent = BK.tr(confirmId === r.id ? "Sure?" : "Delete"); del.setAttribute("aria-label", BK.tr("Delete") + " " + r.name);
       del.onclick = () => { if (confirmId === r.id) { confirmId = null; Dough.recipes.remove(r.id); } else { confirmId = r.id; clearTimeout(confirmT); confirmT = setTimeout(() => { confirmId = null; draw(Dough.recipes.list()); }, 2500); draw(Dough.recipes.list()); } };
       li.append(t, load, del); ul.append(li);
     });
   }
   Dough.recipes.subscribe(draw);
+  BK.onChange(() => draw(Dough.recipes.list()));
 })();
 </script>
 </body>

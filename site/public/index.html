@@ -559,7 +559,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.3.0";
+  const VERSION = "1.3.1";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -625,11 +625,12 @@ window.BK = (() => {
   function setTheme(v) { prefs.theme = v; save(); applyTheme(); drawSettings(); }
   function open(o) { $("#settings").hidden = !o; $("#sb").setAttribute("aria-expanded", String(o)); }
   /* ---- clicks: a short mechanical tick for every step of a wheel, a heavier one on the round numbers ---- */
-  let ac = null, last = 0, iosSwitch = null;
+  let ac = null, last = 0, iosSwitch = null;   // ac: null = not made yet, false = not available
   const MAJOR = { flour: 100, hydration: 5, pizzaHydration: 5, starterPct: 5, balls: 4, yeastPct: 0.5 };
   let master = null, voices = 0, lastBody = 0;
-  function audio() {
-    if (!ac) {
+  // Creating an audio context can block the page for a few hundred milliseconds on a phone. Do it once the page is idle, never in the middle of a tap.
+  function ensure() {
+    if (ac === null) {
       try {
         ac = new (window.AudioContext || window.webkitAudioContext)();
         // everything goes through one gain and a limiter, so a burst of ticks can never add up into a thud
@@ -638,9 +639,9 @@ window.BK = (() => {
         master.connect(lim).connect(ac.destination);
       } catch { ac = false; }
     }
-    if (ac && ac.state === "suspended") ac.resume();
     return ac;
   }
+  function audio() { const a = ensure(); if (a && a.state === "suspended") a.resume(); return a; }
   function click(major) {
     const a = audio();
     // a context that is still suspended queues everything and then plays it at once, which is the loud thud: drop those ticks instead
@@ -675,7 +676,8 @@ window.BK = (() => {
     if (prefs.haptics) buzz(major);
   }
   window.__tick = tick;
-  addEventListener("pointerdown", () => { if (prefs.sound) audio(); }, { capture: true, passive: true });   // unlock audio on the first touch
+  addEventListener("pointerdown", () => { if (prefs.sound && ac && ac.state === "suspended") ac.resume(); }, { capture: true, passive: true });   // the first touch only wakes the context that is already there
+  (window.requestIdleCallback || (f => setTimeout(f, 800)))(() => { if (prefs.sound) ensure(); }, { timeout: 2500 });
 
   applyTheme(); applyStatic(); drawSettings();
   $("#sb").addEventListener("click", () => open($("#settings").hidden));

@@ -1,226 +1,56 @@
-# Home Assistant Baking Calculator
+# Bake
 
-A simple, mobile-friendly Home Assistant dashboard page for bread, sourdough, instant yeast, and Neapolitan-style pizza dough calculations.
+A dough calculator for bread and pizza. Drag a wheel, tap a preset, and get every gram.
 
-This is a single-file HTML baking calculator made for Home Assistant dashboards. It works well on phone screens, remembers useful bread values, and gives fast ingredient amounts for sourdough bread, instant yeast bread, and pizza dough. It's very usable also outside Home Assistant.
+**Open it: [bake.juringari.com](https://bake.juringari.com)**
 
-## Features
+![Bake: a dough calculator for bread and pizza](docs/social-preview.png)
 
-- Home Assistant dashboard-friendly single HTML file
-- Works as a Webpage card at `/local/baking.html`
-- Mobile-first layout for phones and wall tablets
-- Material-style touch controls
-- Sourdough bread calculator
-- Instant yeast bread calculator
-- Neapolitan pizza dough calculator
-- Pizza dough balls stepper
-- Same day and next day pizza proofing options
-- Instant dry yeast and sourdough pizza modes
-- Flour, water, starter, yeast, salt, hydration, and total dough outputs
-- Small bake-plan tips for each mode
-- No server, no build step, no external dependencies
+| Bread | Pizza |
+| :---: | :---: |
+| <img src="docs/bake-bread-light.png" width="300" alt="Bake bread calculator in light mode: 1,200 g flour, 70 percent hydration, 10 percent starter"> | <img src="docs/bake-pizza-dark.png" width="300" alt="Bake pizza calculator in dark mode: six dough balls, sourdough, next day"> |
+| <img src="docs/bake-bread-dark.png" width="300" alt="Bake bread calculator in dark mode"> | <img src="docs/bake-pizza-light.png" width="300" alt="Bake pizza calculator in light mode"> |
 
-## Live preview
+## What it does
 
-- https://slovenec88.github.io/home-assistant-baking-calculator
+- **Bread** with sourdough or with yeast, **pizza** with sourdough or with instant yeast, same day or next day.
+- **Wheels instead of fields.** Drag anywhere on a card to change a value. The ruler follows your finger, with a click on every step and a firmer one on round numbers.
+- **The amounts you pour and scoop come first:** water, the leavening, flour (for pizza) and salt are highlighted. Total dough is there, but quiet.
+- **Presets** for the amounts you use most (800 g and 1200 g flour, 65 % and 70 % hydration, 5 % and 10 % starter).
+- **Saved recipes** in a drawer at the bottom. Pull it up with your thumb, name the recipe, load it later.
+- **English and Slovenščina**, light, dark or system theme, sound and haptics you can turn off. All in the settings at the top right.
+- **One typeface:** [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next), made for being read easily. Licensed under the SIL Open Font License, a copy is in [`site/public/fonts`](site/public/fonts/OFL-AtkinsonHyperlegibleNext.txt).
+- Made to fit one phone screen. Nothing to install, no account, no tracking.
 
-## Screens
+## Add it to Home Assistant
 
-The page has three tabs:
+You only need the address.
 
-- **Sourdough** for basic sourdough bread
-- **Instant yeast** for quick bread
-- **Pizza** for Neapolitan-style pizza dough
+1. Open your dashboard and choose **Edit dashboard** (the pencil).
+2. **Add card**, then pick the **Webpage** card.
+3. For **URL**, enter `https://bake.juringari.com`
+4. Save.
 
-<img width="405" height="806" alt="image" src="https://github.com/user-attachments/assets/de74a002-c5f6-4b11-b8a4-857547ee8b10" />
+For a full-screen calculator, give the card its own view and set the view type to **Panel (1 card)**. On a phone, the Home Assistant app shows it like any other page.
 
-<img width="402" height="835" alt="image" src="https://github.com/user-attachments/assets/f9715ba5-a800-467b-9727-019e3340b7ee" />
+If you use the YAML editor, the card is:
 
-
-
-It is designed to fit nicely inside a Home Assistant dashboard card, especially on mobile.
-
-## Install In Home Assistant
-
-Copy the HTML file into your Home Assistant `www` folder.
-
-For most Home Assistant installs, the file should be placed here:
-
-```text
-/config/www/baking.html
+```yaml
+type: iframe
+url: https://bake.juringari.com
+aspect_ratio: 170%
 ```
 
-Some systems expose the same folder as:
+The page loads from the internet, so the phone needs a connection when you open it.
 
-```text
-/www/baking.html
-```
+## Saved recipes and settings stay on your device
 
-Home Assistant serves files from the `www` folder under `/local/`, so the dashboard URL becomes:
+Bake keeps recipes, language and theme in the browser's own storage, so inside Home Assistant they stay in the Home Assistant app on that phone, and a regular browser has its own separate copy.
 
-```text
-/local/baking.html
-```
+## About this repository
 
-## Add As A Home Assistant Dashboard
+- [`site/`](site) is the Cloudflare Worker that serves Bake. Deploy notes are in [`site/README.md`](site/README.md).
+- The original single-file version, a plain `baking.html` for a Home Assistant `/local/` page, is still on the `main` branch.
+- The `/concepts/` page of the live site shows every design that was tried on the way, from the original to Material You, Apple glass, a Rams-style panel and a handful of unusual ones.
 
-In Home Assistant:
-
-1. Open **Settings**.
-2. Go to **Dashboards**.
-3. Click **Add dashboard**.
-4. Choose **Webpage** as the dashboard type.
-5. For the webpage URL, enter:
-
-```text
-/local/baking.html
-```
-
-6. Enter a title, for example:
-
-```text
-baking
-```
-
-7. Home Assistant will automatically populate the dashboard URL/path with something like:
-
-```text
-dashboard-baking
-```
-
-You can keep the automatically generated dashboard URL/path.
-
-## Direct Test URL
-
-After copying the file, test it directly in a browser:
-
-```text
-http://homeassistant.local:8123/local/baking.html
-```
-
-Or with your Home Assistant IP address:
-
-```text
-http://YOUR_HA_IP:8123/local/baking.html
-```
-
-## Sourdough Bread Calculator
-
-The sourdough tab lets you enter:
-
-- Flour weight
-- Hydration
-- Starter percentage
-
-It calculates:
-
-- Required water
-- Sourdough starter
-- Salt
-- Final hydration
-- Total dough weight
-
-The starter is treated as 100% hydration starter.
-
-## Instant Yeast Bread Calculator
-
-The instant yeast tab lets you enter:
-
-- Flour weight
-- Hydration
-
-It calculates:
-
-- Required water
-- Instant yeast
-- Salt
-- Final hydration
-- Total dough weight
-
-## Pizza Dough Calculator
-
-The pizza tab is inspired by Neapolitan pizza dough calculators.
-
-You choose:
-
-- Number of dough balls
-- Yeast type: instant dry or sourdough
-- Proofing time: same day or next day
-- Hydration
-- Instant yeast percentage when using instant dry yeast
-
-The ball weight is fixed at `300 g`.
-
-Pizza defaults:
-
-- Dough balls: `8`
-- Ball weight: `300 g`
-- Hydration: `64%`
-- Salt: `2%`
-- Instant dry yeast, next day: `0.11%`
-- Instant dry yeast, same day: `0.5%`
-- Sourdough starter, next day: `20%`
-- Sourdough starter, same day: `25%`
-
-It calculates:
-
-- Flour
-- Required water
-- Instant yeast or sourdough starter
-- Salt
-- Final hydration
-- Total dough weight
-
-## What Gets Remembered
-
-The bread calculators remember practical values like flour, hydration, and starter amount.
-
-Pizza hydration and instant yeast percentage reset to defaults when the page is reopened, so quick experiments do not permanently change the recipe.
-
-## Troubleshooting
-
-### `/local/baking.html` gives 404
-
-Make sure the file is in the Home Assistant `www` folder:
-
-```text
-/config/www/baking.html
-```
-
-or, on systems where it is exposed directly:
-
-```text
-/www/baking.html
-```
-
-Do not put the file in:
-
-```text
-/www/community/
-```
-
-That folder is usually for HACS frontend files.
-
-### The page opens directly but not in a dashboard
-
-Use a Webpage card and set the URL to:
-
-```text
-/local/baking.html
-```
-
-### I changed the file but Home Assistant still shows the old version
-
-Refresh the browser/app. If needed, change the URL temporarily to:
-
-```text
-/local/baking.html?v=2
-```
-
-## Search Keywords
-
-Home Assistant baking calculator, Home Assistant sourdough calculator, Home Assistant pizza dough calculator, Home Assistant Neapolitan pizza calculator, Home Assistant bread dashboard, Home Assistant Webpage card baking, sourdough starter calculator, instant yeast dough calculator, pizza hydration calculator, Ooni style pizza dough calculator.
-
-## License
-
-Use, copy, and adapt freely.
+Made for [juringari.com](https://juringari.com).

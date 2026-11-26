@@ -31,6 +31,10 @@
   #dlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: inherit; }
   #dlist b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #dlist span { display: block; color: var(--mid, var(--muted, inherit)); font-size: 0.8125rem; }
+  #plan button.timer { all: unset; box-sizing: border-box; color: var(--mid); font-size: 0.75rem; min-height: 1em; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; touch-action: none; }
+  #plan li.cold button.timer { color: var(--crust); font-weight: 600; }
+  #plan button.timer:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #dlist span.when { font-size: 0.75rem; opacity: 0.8; }
   #dlist button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; border-radius: inherit; }
   #dlist button.load { background: var(--accent); color: var(--on-accent, #000); border-color: transparent; font-weight: 700; }
   #dnote { margin: 0; padding: 8px 10px; border: 1px solid var(--line); font-size: 0.8125rem; line-height: 1.35; color: var(--mid, var(--muted, inherit)); border-radius: inherit; }
@@ -577,7 +581,7 @@ Dough.recipes = (() => {
 <script>
 /* Bake: language, theme and version. Settings live in this browser only. */
 window.BK = (() => {
-  const VERSION = "1.5.2";
+  const VERSION = "1.6.0";
   const SL = {
     "Bread": "Kruh", "Pizza": "Pica", "Recipes": "Recepti", "Flour": "Moka", "Hydration": "Hidracija", "Starter": "Droži", "Dough balls": "Hlebčki",
     "Yeast": "Kvas", "Instant yeast": "Kvas", "Leavening": "Vzhajalno sredstvo", "Proofing": "Čas priprave", "Sourdough": "Droži",
@@ -585,7 +589,7 @@ window.BK = (() => {
     "Mix": "Mešaj", "Rest": "Počitek", "Basket": "Košara", "Bake": "Peka", "Divide": "Delitev", "Double": "Vzhaja", "Chill": "Hladi",
     "Sourdough bread": "Kruh z drožmi", "Instant yeast bread": "Kruh s kvasom", "Neapolitan pizza": "Neapeljska pica",
     "Name this recipe": "Poimenuj recept", "Recipe name": "Ime recepta", "Save": "Shrani", "Saved": "Shranjeno", "Saved for this session": "Shranjeno za to sejo",
-    "No saved recipes.": "Ni shranjenih receptov.", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
+    "No saved recipes.": "Ni shranjenih receptov.", "Add to Clock": "Dodaj v Uro", "Load": "Naloži", "Delete": "Izbriši", "Sure?": "Res?", "Saved recipes": "Shranjeni recepti",
     "Your browser blocks storage in this view, so recipes only last until you close the page. Open this file in a normal browser tab to keep them.": "Brskalnik v tem pogledu blokira shranjevanje, zato recepti obstanejo le do zaprtja strani. Odpri stran v navadnem zavihku, da jih obdržiš.",
     "Dough type": "Vrsta testa", "Proportions of the dough": "Razmerja v testu",
     "Settings": "Nastavitve", "App": "Aplikacija", "Install app": "Namesti aplikacijo", "Installed": "Nameščeno", "Tap Share, then Add to Home Screen.": "Tapni Deli, nato Dodaj na začetni zaslon.", "Open the browser menu and choose Install app or Add to Home screen.": "V meniju brskalnika izberi Namesti aplikacijo ali Dodaj na začetni zaslon.", "Drag to adjust": "Povleci za nastavitev", "Sound": "Zvok", "Haptics": "Vibriranje", "On": "Vklopljeno", "Off": "Izklopljeno", "Language": "Jezik", "Theme": "Videz", "System": "Sistem", "Light": "Svetel", "Dark": "Temen", "Version": "Različica"
@@ -751,6 +755,13 @@ window.BK = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const H = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k] === true ? "" : attrs[k]); } kids.forEach(c => e.append(c)); return e; };
+  // Android only: a timed step opens the Clock app with a timer set (Chrome's intent link; the Clock app then keeps the time, not this page)
+  const ANDROID = /Android/i.test(navigator.userAgent) && (() => { try { return window.self === window.top; } catch { return false; } })();
+  function clockBtn(s) {
+    const b = H("button", { type: "button", class: "timer", text: s.text, "aria-label": BK.tr("Add to Clock") + ": " + BK.tr(s.label) + " " + s.text });
+    b.onclick = () => { location.href = "intent:#Intent;action=android.intent.action.SET_TIMER;i.android.intent.extra.alarm.LENGTH=" + Math.round(s.hours * 3600) + ";S.android.intent.extra.alarm.MESSAGE=" + encodeURIComponent("Bake: " + BK.tr(s.label)) + ";B.android.intent.extra.alarm.SKIP_UI=false;end"; };
+    return b;
+  }
   const PX = { flour: 7, hydration: 22, pizzaHydration: 22, starterPct: 26, balls: 30, yeastPct: 14 };
   // each wheel has its own scale: pixels per step, a small tick every n steps, a tall tick every m steps
   const RL = { flour: [2, 10], hydration: [1, 5], pizzaHydration: [1, 5], starterPct: [1, 2], balls: [1, 4], yeastPct: [1, 10] };
@@ -861,7 +872,7 @@ window.BK = (() => {
     bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important"));
     while (fs > 30 && bigs.some(b => b.scrollWidth > b.clientWidth)) { fs -= 1; bigs.forEach(b => b.style.setProperty("font-size", fs + "px", "important")); }
     $("#plan").dataset.n = String(model.timeline.length);
-    $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), H("span", { text: s.text }))));
+    $("#plan").replaceChildren(...model.timeline.map((s, i) => H("li", { class: s.fridge ? "cold" : "", "aria-label": s.text ? BK.tr(s.label) + ", " + s.text : BK.tr(s.label) }, H("small", { text: String(i + 1) }), H("b", { text: BK.tr(s.label) }), s.hours && ANDROID ? clockBtn(s) : H("span", { text: s.text }))));
   }
 
   // First visit only: a quiet hint that the cards are wheels. The ruler of the first wheel drifts a little each way and a small caption fades in; the first touch ends it.
@@ -956,7 +967,10 @@ window.BK = (() => {
     if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = BK.tr("No saved recipes."); ul.append(li); return; }
     list.forEach(r => {
       const li = document.createElement("li");
-      const t = document.createElement("div"); const b = document.createElement("b"); b.textContent = r.name; const s = document.createElement("span"); s.textContent = BK.summary(r.snap); t.append(b, s);
+      const t = document.createElement("div"); const b = document.createElement("b"); b.textContent = r.name; const s = document.createElement("span"); s.textContent = BK.summary(r.snap);
+      const when = r.at ? document.createElement("span") : null;
+      if (when) { when.className = "when"; try { when.textContent = new Date(r.at).toLocaleDateString(BK.lang === "sl" ? "sl-SI" : undefined, { day: "numeric", month: "short", year: "numeric" }); } catch { when.textContent = new Date(r.at).toDateString(); } }
+      t.append(b, s); if (when) t.append(when);
       const load = document.createElement("button"); load.type = "button"; load.className = "load"; load.textContent = BK.tr("Load"); load.setAttribute("aria-label", BK.tr("Load") + " " + r.name);
       load.onclick = () => { Dough.recipes.load(r.id); setOpen(false); vib(10); };
       const del = document.createElement("button"); del.type = "button"; del.textContent = BK.tr(confirmId === r.id ? "Sure?" : "Delete"); del.setAttribute("aria-label", BK.tr("Delete") + " " + r.name);
@@ -971,7 +985,7 @@ window.BK = (() => {
 <script>
 // A finger that slides a little still taps. The browser would call that a drag and drop the click, which felt like the button not responding.
 (() => {
-  const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo";
+  const SEL = "#tabs button, .pre button, #choices button, #sb, .seg button, #dlist button, #dgo, #plan button";
   let down = null, handled = null;
   document.addEventListener("pointerdown", e => { const b = e.target.closest && e.target.closest(SEL); down = b && !b.disabled ? { b, id: e.pointerId, t: performance.now() } : null; }, true);
   document.addEventListener("pointerup", e => {
